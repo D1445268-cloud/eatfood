@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>逢甲美食大轉盤</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&family=Outfit:wght@600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <main class="app-container">
+        <header class="app-header">
+            <h1 class="title">逢甲美食大轉盤 <span class="subtitle">今天吃什麼？</span></h1>
+        </header>
+
+        <section class="wheel-section">
+            <!-- 轉盤外框特效 -->
+            <div class="wheel-ring"></div>
+            <!-- 指針 -->
+            <div class="wheel-pointer">
+                <div class="pointer-triangle"></div>
+                <div class="pointer-center"></div>
+            </div>
+            
+            <!-- 轉盤本體 (Canvas) -->
+            <div class="canvas-container">
+                <canvas id="wheelCanvas" width="600" height="600"></canvas>
+            </div>
+        </section>
+
+        <section class="controls">
+            <button id="spinBtn" class="spin-button">開始轉動！</button>
+        </section>
+    </main>
+
+    <!-- 結果彈窗 (Modal) -->
+    <div id="resultModal" class="modal">
+        <div class="modal-content glass-effect">
+            <h2 class="modal-title">✨ 今晚決定吃 ✨</h2>
+            <div id="resultText" class="result-highlight"></div>
+            <button id="closeModalBtn" class="primary-btn">太棒了，就吃這個！</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

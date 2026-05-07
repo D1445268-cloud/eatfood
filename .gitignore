@@ -6,3 +6,7 @@ node_modules/
 dist/
 build/
 .DS_Store
+*.db
+*.db-shm
+*.db-wal
+*.sqlite3

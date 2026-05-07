@@ -1,0 +1,265 @@
+:root {
+    --bg-color: #0f172a;
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --primary-color: #f43f5e;
+    --primary-hover: #e11d48;
+    --ring-gradient: linear-gradient(135deg, #f43f5e, #fbbf24, #3b82f6, #8b5cf6);
+    --glass-bg: rgba(30, 41, 59, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.1);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Noto Sans TC', sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden; /* 防止手機瀏覽器滑動彈性效果 */
+}
+
+/* 應用容器 */
+.app-container {
+    width: 100%;
+    max-width: 500px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+}
+
+/* 標題區域 */
+.app-header {
+    text-align: center;
+}
+
+.title {
+    font-family: 'Outfit', 'Noto Sans TC', sans-serif;
+    font-size: 2rem;
+    font-weight: 900;
+    background: var(--ring-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+}
+
+.subtitle {
+    display: block;
+    font-size: 1rem;
+    color: var(--text-secondary);
+    font-weight: 400;
+    margin-top: 0.25rem;
+    -webkit-text-fill-color: var(--text-secondary); /* 覆寫上面的 transparent */
+}
+
+/* 轉盤區域 */
+.wheel-section {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    max-width: 350px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0 auto;
+}
+
+/* 發光外框 */
+.wheel-ring {
+    position: absolute;
+    top: -10px;
+    left: -10px;
+    right: -10px;
+    bottom: -10px;
+    border-radius: 50%;
+    background: var(--ring-gradient);
+    z-index: 0;
+    box-shadow: 0 0 30px rgba(244, 63, 94, 0.4);
+    animation: pulseRing 3s infinite alternate ease-in-out;
+}
+
+.wheel-ring::after {
+    content: '';
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    right: 5px;
+    bottom: 5px;
+    background-color: var(--bg-color);
+    border-radius: 50%;
+}
+
+@keyframes pulseRing {
+    0% { box-shadow: 0 0 20px rgba(244, 63, 94, 0.3), inset 0 0 10px rgba(0,0,0,0.5); }
+    100% { box-shadow: 0 0 40px rgba(251, 191, 36, 0.6), inset 0 0 10px rgba(0,0,0,0.5); }
+}
+
+/* 轉盤 Canvas 容器 */
+.canvas-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    overflow: hidden;
+    z-index: 1;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+    /* 轉盤旋轉動畫會透過 JS 加上 inline style 的 transform */
+    transition: transform 5s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transform: translateZ(0); /* 觸發 GPU 加速 */
+    will-change: transform;
+}
+
+canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+/* 指針設計 */
+.wheel-pointer {
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.6));
+}
+
+.pointer-triangle {
+    width: 0;
+    height: 0;
+    border-left: 15px solid transparent;
+    border-right: 15px solid transparent;
+    border-top: 30px solid var(--primary-color);
+    margin-bottom: -15px;
+}
+
+.pointer-center {
+    width: 24px;
+    height: 24px;
+    background: radial-gradient(circle at 30% 30%, #fff, #cbd5e1);
+    border-radius: 50%;
+    border: 3px solid var(--primary-color);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+}
+
+/* 控制區域 */
+.controls {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+.spin-button {
+    background: linear-gradient(135deg, var(--primary-color), #f59e0b);
+    color: white;
+    border: none;
+    padding: 1rem 3rem;
+    font-size: 1.25rem;
+    font-weight: 700;
+    border-radius: 50px;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(244, 63, 94, 0.4);
+    transition: transform 0.1s, box-shadow 0.2s;
+    font-family: inherit;
+    letter-spacing: 2px;
+}
+
+.spin-button:active {
+    transform: scale(0.95);
+    box-shadow: 0 2px 10px rgba(244, 63, 94, 0.4);
+}
+
+.spin-button:disabled {
+    background: #475569;
+    color: #94a3b8;
+    box-shadow: none;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* 結果 Modal (Glassmorphism) */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.modal.show {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.modal-content {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    padding: 2.5rem 2rem;
+    text-align: center;
+    width: 90%;
+    max-width: 350px;
+    transform: scale(0.8) translateY(20px);
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+.modal.show .modal-content {
+    transform: scale(1) translateY(0);
+}
+
+.modal-title {
+    font-size: 1.25rem;
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+    font-weight: 700;
+}
+
+.result-highlight {
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: #fbbf24;
+    margin-bottom: 2rem;
+    text-shadow: 0 2px 10px rgba(251, 191, 36, 0.3);
+    word-break: break-word;
+}
+
+.primary-btn {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 0.8rem 2rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+    width: 100%;
+}
+
+.primary-btn:hover {
+    background: #2563eb;
+}
