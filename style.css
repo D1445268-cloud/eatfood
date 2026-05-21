@@ -190,8 +190,8 @@ canvas {
     transform: none;
 }
 
-/* 結果 Modal (Glassmorphism) */
-.modal {
+/* 舊結果 Modal 樣式 (已限縮範圍以避免與 Bootstrap 衝突) */
+#resultModal {
     position: fixed;
     top: 0;
     left: 0;
@@ -209,12 +209,12 @@ canvas {
     transition: opacity 0.3s ease;
 }
 
-.modal.show {
+#resultModal.show {
     opacity: 1;
     pointer-events: auto;
 }
 
-.modal-content {
+#resultModal .modal-content {
     background: var(--glass-bg);
     border: 1px solid var(--glass-border);
     border-radius: 20px;
@@ -227,16 +227,57 @@ canvas {
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
 }
 
-.modal.show .modal-content {
+#resultModal.show .modal-content {
     transform: scale(1) translateY(0);
 }
 
-.modal-title {
+#resultModal .modal-title {
     font-size: 1.25rem;
     color: var(--text-secondary);
     margin-bottom: 1rem;
     font-weight: 700;
 }
+
+/* 美食情報卡自訂排版與進階質感 (F-03 專屬) */
+#modalRecommendedItems::-webkit-scrollbar {
+    display: none; /* 隱藏 Chrome, Safari 的滾動條 */
+}
+
+#modalRecommendedItems {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox 隱藏滾動條 */
+}
+
+.fw-black {
+    font-weight: 900 !important;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* F-03 極速響應與高質感動畫優化 */
+/* 1. 消除手機瀏覽器 300ms 點擊延遲，確保即時反應 */
+#modalMapBtn, 
+.btn,
+.btn-close,
+.spin-button {
+    touch-action: manipulation;
+}
+
+/* 2. 訂製高質感平滑淡入＋Q彈放大動畫 (Anticipatory Scale-up) */
+.modal.fade .modal-content {
+    transform: scale(0.9) translateY(20px);
+    opacity: 0;
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+}
+
+.modal.show .modal-content {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+}
+
 
 .result-highlight {
     font-size: 2.5rem;
@@ -262,4 +303,71 @@ canvas {
 
 .primary-btn:hover {
     background: #2563eb;
+}
+
+/* 篩選按鈕樣式 */
+.filter-button {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+    border: 1px solid var(--glass-border);
+    padding: 0.75rem 2rem;
+    font-size: 1rem;
+    font-weight: 700;
+    border-radius: 50px;
+    cursor: pointer;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s ease;
+    font-family: inherit;
+    letter-spacing: 1px;
+    touch-action: manipulation;
+}
+
+.filter-button:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px);
+}
+
+.filter-button:active {
+    transform: scale(0.98);
+}
+
+/* 高級暖色調膠囊勾選按鈕 (Pill Checkboxes) */
+.btn-outline-custom {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1.5px solid rgba(255, 255, 255, 0.15) !important;
+    color: #cbd5e1 !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    font-weight: 600;
+}
+
+.btn-outline-custom:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3) !important;
+    color: #fff !important;
+    transform: translateY(-1px);
+}
+
+.btn-check:checked + .btn-outline-custom {
+    background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%) !important;
+    border-color: transparent !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(255, 107, 107, 0.35);
+    transform: scale(1.05);
+}
+
+/* 輔助與精細度排版 */
+.fs-7 {
+    font-size: 0.85rem !important;
+}
+
+.offcanvas-title {
+    font-family: 'Noto Sans TC', sans-serif;
+    color: #f8fafc;
+}
+
+.btn-close-white {
+    filter: invert(1) grayscale(1) brightness(2);
 }

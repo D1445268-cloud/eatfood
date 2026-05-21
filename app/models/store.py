@@ -122,6 +122,38 @@ class StoreModel:
         
         return rows_affected > 0
 
+    @classmethod
+    def get_filtered(cls, price_ranges=None, meal_types=None):
+        """根據篩選條件 (預算與類型清單) 取得店家"""
+        conn = cls.get_db_connection()
+        cursor = conn.cursor()
+        
+        query = "SELECT * FROM stores"
+        conditions = []
+        params = []
+        
+        if price_ranges:
+            # 安全的參數化 IN 查詢
+            placeholders = ",".join(["?"] * len(price_ranges))
+            conditions.append(f"price_range IN ({placeholders})")
+            params.extend(price_ranges)
+            
+        if meal_types:
+            placeholders = ",".join(["?"] * len(meal_types))
+            conditions.append(f"meal_type IN ({placeholders})")
+            params.extend(meal_types)
+            
+        if conditions:
+            query += " WHERE " + " AND ".join(conditions)
+            
+        query += " ORDER BY id DESC"
+        
+        cursor.execute(query, tuple(params))
+        rows = cursor.fetchall()
+        conn.close()
+        
+        return [dict(row) for row in rows]
+
 # 測試用: 若直接執行此檔案，將會嘗試建立 table 並測試新增/查詢 (假設 schema.sql 已經執行過)
 if __name__ == '__main__':
     print("StoreModel loaded successfully.")

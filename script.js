@@ -1,13 +1,5 @@
-const items = [
-    "大腸包小腸",
-    "明倫蛋餅",
-    "章魚小丸子",
-    "地瓜球",
-    "麻辣臭豆腐",
-    "排骨酥",
-    "烤玉米",
-    "冰糖葫蘆"
-];
+let items = [];
+let storesData = [];
 
 // 高質感調色盤
 const colors = [
@@ -25,9 +17,6 @@ const canvas = document.getElementById("wheelCanvas");
 const ctx = canvas.getContext("2d");
 const spinBtn = document.getElementById("spinBtn");
 const canvasContainer = document.querySelector(".canvas-container");
-const modal = document.getElementById("resultModal");
-const resultText = document.getElementById("resultText");
-const closeModalBtn = document.getElementById("closeModalBtn");
 
 let currentRotation = 0; // 當前旋轉總角度
 let isSpinning = false;
@@ -177,16 +166,219 @@ canvasContainer.addEventListener('transitionend', () => {
     showResult(items[index]);
 });
 
-function showResult(result) {
-    resultText.textContent = result;
-    modal.classList.add("show");
+// 核心：非同步取得店家資料並動態渲染 Modal 內容
+async function loadAndShowStoreDetail(storeId) {
+    try {
+        // 1. 發送 GET 請求向 Flask 獲取詳情
+        const response = await fetch(`/api/stores/${storeId}`);
+        if (!response.ok) throw new Error("網路請求失敗，無法取得店家資料");
+        
+        const store = await response.json();
+
+        // 2. 開始動態填入 Modal 內容
+        document.getElementById("modalFeaturedImg").src = store.featured_image;
+        document.getElementById("modalFeaturedImg").alt = store.name;
+        document.getElementById("modalStoreName").textContent = store.name;
+        document.getElementById("modalWalkingDistance").textContent = `🚶 步行 ${store.walking_distance} 分鐘`;
+        document.getElementById("modalRating").textContent = `⭐ ${store.rating} (${store.reviews_count}+評價)`;
+        
+        // 膠囊標籤填值
+        document.getElementById("modalMealType").textContent = `🍜 ${store.meal_type}`;
+        document.getElementById("modalPriceRange").textContent = `$$ ${store.price_range}`;
+        document.getElementById("modalOpenStatus").textContent = store.is_open 
+            ? `🟢 營業中 (今日至 ${store.closing_time})` 
+            : `🔴 已打烊`;
+        document.getElementById("modalOpenStatus").className = store.is_open 
+            ? "badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill px-3 py-2"
+            : "badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 rounded-pill px-3 py-2";
+
+        // 描述與優惠
+        document.getElementById("modalDescription").textContent = store.description;
+        document.getElementById("modalSpecialOffer").innerHTML = `出示此轉盤結果畫面，<strong>${store.special_offer}</strong>`;
+
+        // 動態生成推薦必點 (Badges)
+        const recommendedContainer = document.getElementById("modalRecommendedItems");
+        recommendedContainer.innerHTML = store.recommended_items
+            .map(item => `<span class="badge bg-secondary bg-opacity-10 text-dark border p-2 px-3 rounded-3 fs-7">${item}</span>`)
+            .join("");
+
+        // 地圖導航按鈕連結
+        document.getElementById("modalMapBtn").href = store.google_maps_url;
+
+        // 3. 實例化並開啟 Bootstrap 5 Modal
+        const infoModalEl = document.getElementById('foodInfoModal');
+        const bsModal = new bootstrap.Modal(infoModalEl);
+        bsModal.show();
+
+    } catch (error) {
+        console.error("載入店家詳情時發生錯誤:", error);
+        alert("店家詳情正在準備中，請稍後再試！");
+    }
 }
 
-closeModalBtn.addEventListener('click', () => {
-    modal.classList.remove("show");
-});
+async function showResult(storeName) {
+    const selectedStore = storesData.find(s => s.name === storeName);
+    if (!selectedStore) {
+        alert("找不到選中店家！");
+        return;
+    }
+    await loadAndShowStoreDetail(selectedStore.id);
+}
+
+// 分享按鈕複製功能
+function copyShareLink() {
+    navigator.clipboard.writeText(window.location.href)
+        .then(() => {
+            alert("店家分享連結已複製到剪貼簿！🎉");
+        })
+        .catch(err => {
+            console.error("複製失敗", err);
+        });
+}
+
+// 重設勾選狀態的輔助函式
+function resetCheckboxes(checkedState = true) {
+    const checkboxes = document.querySelectorAll('#filterDrawer .btn-check');
+    checkboxes.forEach(cb => {
+        cb.checked = checkedState;
+    });
+}
+
+async function loadStores(priceRange = '', mealType = '') {
+    try {
+        let url = '/api/stores';
+        const params = [];
+        if (priceRange) params.push(`price_range=${encodeURIComponent(priceRange)}`);
+        if (mealType) params.push(`meal_type=${encodeURIComponent(mealType)}`);
+        if (params.length > 0) {
+            url += `?${params.join('&')}`;
+        }
+
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("無法獲取店家清單");
+        storesData = await response.json();
+        
+        if (storesData.length === 0) {
+            alert("⚠️ 沒有符合篩選條件的店家，已自動還原為顯示所有店家！");
+            resetCheckboxes(true);
+            await loadStores();
+            return;
+        }
+
+        items = storesData.map(store => store.name);
+        
+        // 每次重新套用篩選後，重置轉盤旋轉角度，確保位置重設
+        currentRotation = 0;
+        canvasContainer.style.transform = 'rotate(0deg)';
+        
+        setupCanvas();
+    } catch (error) {
+        console.error("載入轉盤店家失敗，使用備用靜態資料:", error);
+        storesData = [
+            { id: 1, name: "明倫蛋餅", meal_type: "小吃" },
+            { id: 2, name: "官芝霖大腸包小腸", meal_type: "小吃" },
+            { id: 3, name: "一家之薯起司馬鈴薯", meal_type: "小吃" },
+            { id: 4, name: "尊品原汁牛肉麵", meal_type: "主食" },
+            { id: 5, name: "極味屋日式拉麵", meal_type: "主食" },
+            { id: 6, name: "逢甲冰糖葫蘆", meal_type: "甜點" },
+            { id: 7, name: "阿華黑輪店", meal_type: "小吃" },
+            { id: 8, name: "美濃木瓜牛奶", meal_type: "飲料" }
+        ];
+        items = storesData.map(store => store.name);
+        setupCanvas();
+    }
+}
 
 // 初始化
 window.addEventListener('load', () => {
-    setupCanvas();
+    loadStores();
+});
+
+// 註冊點擊轉動事件
+spinBtn.addEventListener('click', spin);
+
+// --- F-02 篩選功能事件綁定 ---
+
+// 動態更新篩選按鈕文字中符合的店家數量，達到極速響應的視覺回饋
+async function updateFilterButtonCount() {
+    const priceCheckboxes = document.querySelectorAll('#filterDrawer input[id^="price-"]:checked');
+    const mealCheckboxes = document.querySelectorAll('#filterDrawer input[id^="meal-"]:checked');
+    const applyBtn = document.getElementById('applyFilterBtn');
+
+    if (priceCheckboxes.length === 0 && mealCheckboxes.length === 0) {
+        applyBtn.textContent = "請至少選擇一項條件";
+        applyBtn.disabled = true;
+        return;
+    }
+
+    applyBtn.disabled = false;
+    const priceValues = Array.from(priceCheckboxes).map(cb => cb.value).join(',');
+    const mealValues = Array.from(mealCheckboxes).map(cb => cb.value).join(',');
+
+    try {
+        let url = '/api/stores';
+        const params = [];
+        if (priceValues) params.push(`price_range=${encodeURIComponent(priceValues)}`);
+        if (mealValues) params.push(`meal_type=${encodeURIComponent(mealValues)}`);
+        if (params.length > 0) {
+            url += `?${params.join('&')}`;
+        }
+
+        const response = await fetch(url);
+        if (response.ok) {
+            const data = await response.json();
+            applyBtn.textContent = `套用篩選 (符合 ${data.length} 家)`;
+        }
+    } catch (e) {
+        console.error("估算店家數量失敗:", e);
+    }
+}
+
+// 監聽所有篩選核取方塊的狀態變更，即時運算
+document.querySelectorAll('#filterDrawer .btn-check').forEach(cb => {
+    cb.addEventListener('change', updateFilterButtonCount);
+});
+
+// 套用篩選按鈕
+document.getElementById('applyFilterBtn').addEventListener('click', async () => {
+    const priceCheckboxes = document.querySelectorAll('#filterDrawer input[id^="price-"]:checked');
+    const mealCheckboxes = document.querySelectorAll('#filterDrawer input[id^="meal-"]:checked');
+
+    if (priceCheckboxes.length === 0 && mealCheckboxes.length === 0) {
+        alert("請至少選擇一項預算或餐點類型！");
+        return;
+    }
+
+    const priceValues = Array.from(priceCheckboxes).map(cb => cb.value).join(',');
+    const mealValues = Array.from(mealCheckboxes).map(cb => cb.value).join(',');
+
+    const applyBtn = document.getElementById('applyFilterBtn');
+    applyBtn.disabled = true;
+    const originalText = applyBtn.textContent;
+    applyBtn.textContent = "套用中...";
+
+    try {
+        await loadStores(priceValues, mealValues);
+        
+        // 成功後關閉 Offcanvas 面板
+        const filterDrawerEl = document.getElementById('filterDrawer');
+        const bsOffcanvas = bootstrap.Offcanvas.getInstance(filterDrawerEl) || new bootstrap.Offcanvas(filterDrawerEl);
+        bsOffcanvas.hide();
+    } catch (e) {
+        console.error(e);
+    } finally {
+        applyBtn.disabled = false;
+        applyBtn.textContent = originalText;
+    }
+});
+
+// 重設條件按鈕
+document.getElementById('resetFilterBtn').addEventListener('click', () => {
+    resetCheckboxes(true);
+    updateFilterButtonCount(); // 重設後立即刷新按鈕數量
+});
+
+// 頁面加載完成後與初始化時，預先計算一次數量
+window.addEventListener('load', () => {
+    setTimeout(updateFilterButtonCount, 100);
 });
