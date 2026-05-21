@@ -25,9 +25,7 @@ const canvas = document.getElementById("wheelCanvas");
 const ctx = canvas.getContext("2d");
 const spinBtn = document.getElementById("spinBtn");
 const canvasContainer = document.querySelector(".canvas-container");
-const modal = document.getElementById("resultModal");
 const resultText = document.getElementById("resultText");
-const closeModalBtn = document.getElementById("closeModalBtn");
 
 let currentRotation = 0; // 當前旋轉總角度
 let isSpinning = false;
@@ -177,14 +175,166 @@ canvasContainer.addEventListener('transitionend', () => {
     showResult(items[index]);
 });
 
-function showResult(result) {
-    resultText.textContent = result;
-    modal.classList.add("show");
+// ==========================================================================
+// F-03 美食情報卡 & F-06 評論與回報機制邏輯 (Bootstrap 整合版)
+// ==========================================================================
+
+// 店家詳細資訊資料庫 (用於 F-03 美食情報卡展示)
+const storesDb = {
+    "大腸包小腸": { price: "$", type: "傳統小吃", distance: 3, mapsUrl: "https://maps.google.com/?q=逢甲+大腸包小腸" },
+    "明倫蛋餅": { price: "$", type: "傳統小吃", distance: 4, mapsUrl: "https://maps.google.com/?q=逢甲+明倫蛋餅" },
+    "章魚小丸子": { price: "$", type: "日式點心", distance: 2, mapsUrl: "https://maps.google.com/?q=逢甲+章魚小丸子" },
+    "地瓜球": { price: "$", type: "夜市甜點", distance: 5, mapsUrl: "https://maps.google.com/?q=逢甲+地瓜球" },
+    "麻辣臭豆腐": { price: "$$", type: "主食/鍋物", distance: 6, mapsUrl: "https://maps.google.com/?q=逢甲+麻辣臭豆腐" },
+    "排骨酥": { price: "$", type: "炸物小吃", distance: 4, mapsUrl: "https://maps.google.com/?q=逢甲+排骨酥" },
+    "烤玉米": { price: "$$", type: "傳統小吃", distance: 3, mapsUrl: "https://maps.google.com/?q=逢甲+烤玉米" },
+    "冰糖葫蘆": { price: "$", type: "古早味甜點", distance: 2, mapsUrl: "https://maps.google.com/?q=逢甲+冰糖葫蘆" }
+};
+
+// 取得或初始化店家的評分資料
+function getRatingsData(storeName) {
+    const ratings = JSON.parse(localStorage.getItem('eatfood_ratings') || '{}');
+    if (!ratings[storeName]) {
+        // 產生隨機初始資料以增加真實感
+        const randomCount = Math.floor(Math.random() * 25) + 5; // 5-29 次
+        const randomAvg = (Math.random() * 1.0 + 3.8).toFixed(1); // 3.8 - 4.8 星
+        const sum = Math.round(parseFloat(randomAvg) * randomCount);
+        ratings[storeName] = { sum: sum, count: randomCount };
+        localStorage.setItem('eatfood_ratings', JSON.stringify(ratings));
+    }
+    return ratings[storeName];
 }
 
-closeModalBtn.addEventListener('click', () => {
-    modal.classList.remove("show");
+// 儲存評分資料
+function saveRating(storeName, newScore) {
+    const ratings = JSON.parse(localStorage.getItem('eatfood_ratings') || '{}');
+    const storeData = getRatingsData(storeName); // 確保已有初始值
+    
+    storeData.sum += newScore;
+    storeData.count += 1;
+    ratings[storeName] = storeData;
+    
+    localStorage.setItem('eatfood_ratings', JSON.stringify(ratings));
+    return storeData;
+}
+
+// 顯示 Toast 提示訊息
+function showToast(message) {
+    let toast = document.getElementById('toastNotification');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'toastNotification';
+        toast.className = 'toast';
+        document.body.appendChild(toast);
+    }
+    toast.textContent = message;
+    toast.classList.add('show');
+    setTimeout(() => {
+        toast.classList.remove('show');
+    }, 2500);
+}
+
+// 顯示轉盤結果
+function showResult(result) {
+    // 設定結果彈窗中標題的大字店名
+    resultText.textContent = result;
+    
+    // F-03 美食情報卡數據填充
+    const storeInfo = storesDb[result] || { price: "$$", type: "美食", distance: 5, mapsUrl: `https://maps.google.com/?q=逢甲+${result}` };
+    
+    document.getElementById('infoStoreName').textContent = result;
+    document.getElementById('infoPriceRange').textContent = storeInfo.price;
+    document.getElementById('infoMealType').textContent = storeInfo.type;
+    document.getElementById('infoDistance').textContent = `步行 ${storeInfo.distance} 分鐘`;
+    document.getElementById('infoGoogleMapsUrl').href = storeInfo.mapsUrl;
+
+    // 將店家名稱同步寫入回報表單中（唯讀欄位）
+    document.getElementById('reportStoreName').value = result;
+    
+    // F-06 取得店家評分數據並渲染
+    const ratingData = getRatingsData(result);
+    updateStoreRatingDisplay(ratingData);
+
+    // 重設評分輸入欄位 (清除先前的勾選狀態與禁用狀態)
+    document.querySelectorAll('input[name="user-rating-info"]').forEach(radio => {
+        radio.checked = false;
+        radio.disabled = false;
+    });
+
+    // 顯示 Bootstrap Modal
+    const resultModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('resultModal'));
+    resultModal.show();
+}
+
+// 更新美食情報卡內的評分顯示
+function updateStoreRatingDisplay(ratingData) {
+    const avgScore = (ratingData.sum / ratingData.count).toFixed(1);
+    const starDisplay = document.getElementById('infoStoreRating');
+    const ratingText = document.getElementById('infoRatingText');
+    
+    if (starDisplay) {
+        starDisplay.style.setProperty('--rating', avgScore);
+    }
+    if (ratingText) {
+        ratingText.textContent = `${avgScore} (${ratingData.count} 次評分)`;
+    }
+}
+
+// 註冊評分輸入監聽器
+document.querySelectorAll('input[name="user-rating-info"]').forEach(radio => {
+    radio.addEventListener('change', (e) => {
+        const score = parseInt(e.target.value);
+        const currentStore = resultText.textContent;
+        
+        // 儲存評分並取得更新後的資料
+        const updatedData = saveRating(currentStore, score);
+        
+        // 即時更新評分顯示
+        updateStoreRatingDisplay(updatedData);
+        
+        // 禁用評分按鈕避免重複提交
+        document.querySelectorAll('input[name="user-rating-info"]').forEach(input => {
+            input.disabled = true;
+        });
+
+        showToast(`感謝評分！您評了 ${score} 顆星 ✨`);
+    });
 });
+
+// 處理錯誤回報送出 (Bootstrap Modal 內表單)
+const bootstrapReportForm = document.getElementById('bootstrapReportForm');
+if (bootstrapReportForm) {
+    bootstrapReportForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        const currentStore = document.getElementById('reportStoreName').value;
+        const reportType = document.getElementById('bootstrapReportType').value;
+        const reportDetail = document.getElementById('bootstrapReportDetail').value;
+
+        // 讀取並追加回報紀錄到 localStorage
+        const existingReports = JSON.parse(localStorage.getItem('eatfood_reports') || '[]');
+        existingReports.push({
+            storeName: currentStore,
+            type: reportType,
+            detail: reportDetail,
+            timestamp: new Date().toISOString()
+        });
+        localStorage.setItem('eatfood_reports', JSON.stringify(existingReports));
+
+        // 成功回饋
+        showToast('回報送出成功，感謝您的協助！');
+        
+        // 重設表單
+        bootstrapReportForm.reset();
+        
+        // 關閉錯誤回報 Modal
+        const reportModalEl = document.getElementById('errorReportModal');
+        const reportModal = bootstrap.Modal.getInstance(reportModalEl);
+        if (reportModal) {
+            reportModal.hide();
+        }
+    });
+}
 
 // 初始化
 window.addEventListener('load', () => {

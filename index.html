@@ -8,6 +8,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&family=Outfit:wght@600;800&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -36,15 +38,112 @@
         </section>
     </main>
 
-    <!-- 結果彈窗 (Modal) -->
-    <div id="resultModal" class="modal">
-        <div class="modal-content glass-effect">
-            <h2 class="modal-title">✨ 今晚決定吃 ✨</h2>
-            <div id="resultText" class="result-highlight"></div>
-            <button id="closeModalBtn" class="primary-btn">太棒了，就吃這個！</button>
+    <!-- 結果彈窗 (Bootstrap Modal) -->
+    <div class="modal fade" id="resultModal" tabindex="-1" aria-labelledby="resultModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content glass-effect">
+                <div class="modal-header border-bottom-0 pb-0">
+                    <h2 class="modal-title fs-5 text-center w-100 fw-bold" id="resultModalLabel">✨ 今晚決定吃 ✨</h2>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body pt-2">
+                    <div id="resultText" class="result-highlight text-center">明倫蛋餅</div>
+                    
+                    <!-- F-03 美食情報卡 -->
+                    <div class="card food-info-card my-2">
+                        <div class="card-body text-start">
+                            <!-- 店名與價格區間 (店名主要在上面顯示，這裡顯示價格標記) -->
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h4 class="card-title mb-0 fs-5" id="infoStoreName">明倫蛋餅</h4>
+                                <span class="badge price-badge" id="infoPriceRange">$$</span>
+                            </div>
+                            
+                            <!-- 分類與步行時間標籤 -->
+                            <div class="mb-3 d-flex gap-2">
+                                <span class="badge meal-type-badge" id="infoMealType">分類</span>
+                                <span class="badge distance-badge" id="infoDistance">步行 -- 分鐘</span>
+                            </div>
+
+                            <!-- F-06 星級評價唯讀顯示區 -->
+                            <div class="rating-display-box d-flex align-items-center gap-3 p-2 rounded mb-3">
+                                <div class="star-display" id="infoStoreRating" style="--rating: 0;">
+                                    <span class="stars-placeholder">★★★★★</span>
+                                </div>
+                                <span class="rating-text mb-0" id="infoRatingText">0.0 (0 次評分)</span>
+                            </div>
+                            
+                            <!-- F-06 互動評分輸入區 -->
+                            <div class="rating-input-box mb-3">
+                                <span class="rating-input-label text-secondary d-block mb-1">為此店家評分：</span>
+                                <div class="star-rating d-flex justify-content-start">
+                                    <input type="radio" id="infoStar5" name="user-rating-info" value="5" /><label for="infoStar5" title="5 星">★</label>
+                                    <input type="radio" id="infoStar4" name="user-rating-info" value="4" /><label for="infoStar4" title="4 星">★</label>
+                                    <input type="radio" id="infoStar3" name="user-rating-info" value="3" /><label for="infoStar3" title="3 星">★</label>
+                                    <input type="radio" id="infoStar2" name="user-rating-info" value="2" /><label for="infoStar2" title="2 星">★</label>
+                                    <input type="radio" id="infoStar1" name="user-rating-info" value="1" /><label for="infoStar1" title="1 星">★</label>
+                                </div>
+                            </div>
+
+                            <!-- 導航與回報操作按鈕 -->
+                            <div class="d-flex gap-2">
+                                <a href="#" id="infoGoogleMapsUrl" target="_blank" class="btn btn-outline-primary btn-sm flex-grow-1">
+                                    🧭 地圖導航
+                                </a>
+                                <!-- 點擊觸發錯誤回報 Modal -->
+                                <button class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#errorReportModal">
+                                    ⚠️ 資訊錯誤回報
+                                </button>
+                             </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0 pt-0">
+                    <button type="button" class="btn btn-primary w-100 py-2 fw-bold" data-bs-dismiss="modal">太棒了，就吃這個！</button>
+                </div>
+            </div>
         </div>
     </div>
 
+    <!-- 錯誤回報 Modal (F-06) -->
+    <div class="modal fade" id="errorReportModal" tabindex="-1" aria-labelledby="errorReportModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content glass-effect text-start">
+                <div class="modal-header border-bottom-0 pb-0">
+                    <h5 class="modal-title text-danger fw-bold" id="errorReportModalLabel">⚠️ 店家資訊錯誤回報</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="bootstrapReportForm">
+                        <!-- 唯讀店家名稱 -->
+                        <div class="mb-3">
+                            <label class="form-label text-secondary" style="font-size: 0.85rem;">回報店家：</label>
+                            <input type="text" class="form-control custom-form-input" id="reportStoreName" readonly value="店名載入中...">
+                        </div>
+                        <!-- 錯誤類型 -->
+                        <div class="mb-3">
+                            <label for="bootstrapReportType" class="form-label text-secondary" style="font-size: 0.85rem;">錯誤類型：</label>
+                            <select class="form-select custom-form-input" id="bootstrapReportType" required>
+                                <option value="" disabled selected>請選擇問題類型</option>
+                                <option value="closed">店家已歇業</option>
+                                <option value="info_error">資訊錯誤 (價格/分類/距離)</option>
+                                <option value="location_error">地圖位置不符</option>
+                                <option value="other">其他問題</option>
+                            </select>
+                        </div>
+                        <!-- 詳細說明 -->
+                        <div class="mb-3">
+                            <label for="bootstrapReportDetail" class="form-label text-secondary" style="font-size: 0.85rem;">詳細說明：</label>
+                            <textarea class="form-control custom-form-input" id="bootstrapReportDetail" rows="3" placeholder="請填寫具體錯誤詳情..." required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-danger w-100 py-2 fw-bold">送出回報</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
