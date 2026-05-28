@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>後台管理系統 - 逢甲美食大轉盤</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome for Dashboard Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --sidebar-bg: #1e293b;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --text-muted: #94a3b8;
+            --text-light: #f8fafc;
+            --accent-primary: #8b5cf6; /* Violet */
+            --accent-secondary: #f43f5e; /* Rose */
+            --gradient-accent: linear-gradient(135deg, #f43f5e, #8b5cf6);
+            --transition-speed: 0.3s;
+        }
+
+        body {
+            font-family: 'Noto Sans TC', 'Outfit', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Glassmorphism Elements */
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+        }
+        
+        .glass-card:hover {
+            box-shadow: 0 15px 35px rgba(139, 92, 246, 0.15);
+        }
+
+        /* Sidebar Styling */
+        .sidebar {
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            min-height: 100vh;
+            transition: all var(--transition-speed);
+            z-index: 100;
+        }
+
+        .sidebar-brand {
+            font-family: 'Outfit', 'Noto Sans TC', sans-serif;
+            font-weight: 800;
+            font-size: 1.35rem;
+            background: var(--gradient-accent);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 1px;
+        }
+
+        .nav-link-custom {
+            color: var(--text-muted);
+            border-radius: 10px;
+            padding: 0.8rem 1.2rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            margin-bottom: 5px;
+        }
+
+        .nav-link-custom:hover, .nav-link-custom.active {
+            color: var(--text-light);
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .nav-link-custom.active {
+            background: var(--gradient-accent);
+            box-shadow: 0 4px 15px rgba(244, 63, 94, 0.3);
+        }
+
+        /* Stats Cards */
+        .stat-card {
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-icon {
+            position: absolute;
+            right: 20px;
+            bottom: 10px;
+            font-size: 3.5rem;
+            opacity: 0.08;
+            color: var(--text-light);
+            transition: transform var(--transition-speed);
+        }
+
+        .stat-card:hover .stat-icon {
+            transform: scale(1.15) rotate(-10deg);
+        }
+
+        /* Main Content Styling */
+        .content-header {
+            padding: 2rem 0;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 2rem;
+        }
+
+        /* Search Bar styling */
+        .search-input-group {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            border-radius: 50px;
+            padding: 2px 10px 2px 20px;
+            display: flex;
+            align-items: center;
+            max-width: 380px;
+            width: 100%;
+            transition: border-color var(--transition-speed);
+        }
+
+        .search-input-group:focus-within {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 10px rgba(139, 92, 246, 0.2);
+        }
+
+        .search-input-group input {
+            background: transparent;
+            border: none;
+            color: var(--text-light);
+            padding: 10px 0;
+            width: 100%;
+            outline: none;
+        }
+
+        .search-input-group input::placeholder {
+            color: var(--text-muted);
+        }
+
+        /* Table Design */
+        .table-responsive {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255,255,255,0.1) transparent;
+        }
+
+        .custom-table {
+            color: var(--text-light);
+            margin-bottom: 0;
+        }
+
+        .custom-table th {
+            background-color: rgba(255, 255, 255, 0.02) !important;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 0.5px;
+            padding: 1.1rem 1rem;
+            border-bottom: 2px solid var(--border-color) !important;
+        }
+
+        .custom-table td {
+            padding: 1.1rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+            background-color: transparent !important;
+            color: #e2e8f0;
+        }
+
+        .custom-table tr {
+            transition: background-color 0.2s ease;
+        }
+
+        .custom-table tr:hover {
+            background-color: rgba(255, 255, 255, 0.02) !important;
+        }
+
+        /* Badge Customization */
+        .badge-category {
+            padding: 6px 12px;
+            border-radius: 50px;
+            font-weight: 500;
+            font-size: 0.75rem;
+            border: 1px solid transparent;
+        }
+
+        .badge-snack {
+            background: rgba(245, 158, 11, 0.1);
+            color: #f59e0b;
+            border-color: rgba(245, 158, 11, 0.2);
+        }
+
+        .badge-main {
+            background: rgba(244, 63, 94, 0.1);
+            color: #f43f5e;
+            border-color: rgba(244, 63, 94, 0.2);
+        }
+
+        .badge-dessert {
+            background: rgba(139, 92, 246, 0.1);
+            color: #a78bfa;
+            border-color: rgba(139, 92, 246, 0.2);
+        }
+
+        .badge-drink {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+            border-color: rgba(16, 185, 129, 0.2);
+        }
+
+        .badge-price {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #cbd5e1;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+
+        /* Custom Buttons */
+        .btn-gradient {
+            background: var(--gradient-accent);
+            border: none;
+            color: var(--text-light);
+            font-weight: 600;
+            border-radius: 50px;
+            padding: 10px 24px;
+            box-shadow: 0 4px 15px rgba(244, 63, 94, 0.3);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn-gradient:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(244, 63, 94, 0.45);
+            color: white;
+        }
+
+        .btn-action {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text-muted);
+            transition: all 0.2s ease;
+        }
+
+        .btn-action:hover {
+            color: var(--text-light);
+            transform: translateY(-1px);
+        }
+
+        .btn-action-edit:hover {
+            background: rgba(139, 92, 246, 0.15);
+            border-color: rgba(139, 92, 246, 0.3);
+            color: #a78bfa;
+        }
+
+        .btn-action-delete:hover {
+            background: rgba(244, 63, 94, 0.15);
+            border-color: rgba(244, 63, 94, 0.3);
+            color: #f43f5e;
+        }
+
+        /* Modal Customization */
+        .modal-content-custom {
+            background: #1e293b;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            color: var(--text-light);
+        }
+
+        .modal-header-custom {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 1.5rem;
+        }
+
+        .modal-footer-custom {
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 1.25rem 1.5rem;
+        }
+
+        .form-control-custom {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: var(--text-light);
+            border-radius: 10px;
+            padding: 10px 14px;
+        }
+
+        .form-control-custom:focus {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 10px rgba(139, 92, 246, 0.25);
+            color: var(--text-light);
+        }
+
+        .form-label {
+            color: var(--text-muted);
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        /* Custom Notification Toast */
+        .custom-toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 1080;
+            background: rgba(15, 23, 42, 0.95);
+            border-left: 5px solid #10b981;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 16px 24px;
+            transform: translateY(150%);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.15);
+        }
+
+        .custom-toast.show {
+            transform: translateY(0);
+        }
+
+        .custom-toast-icon {
+            font-size: 1.5rem;
+            color: #10b981;
+        }
+
+        /* Responsive refinements */
+        @media (max-width: 768px) {
+            .sidebar {
+                min-height: auto;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar Navigation Component -->
+        <nav class="col-md-3 col-lg-2 sidebar p-4 d-flex flex-column justify-content-between">
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-4 pb-2">
+                    <div class="bg-gradient-accent rounded-3 p-2 d-flex align-items-center justify-content-center text-white" style="width: 38px; height: 38px; background: var(--gradient-accent);">
+                        <i class="fa-solid fa-utensils"></i>
+                    </div>
+                    <span class="sidebar-brand">EatFood Admin</span>
+                </div>
+                
+                <div class="nav flex-column">
+                    <a href="#" class="nav-link-custom active">
+                        <i class="fa-solid fa-chart-line"></i> 店家管理
+                    </a>
+                    <a href="/" class="nav-link-custom">
+                        <i class="fa-solid fa-circle-left"></i> 回到大轉盤
+                    </a>
+                </div>
+            </div>
+            
+            <div class="pt-3 border-top border-secondary border-opacity-10 text-center">
+                <small class="text-secondary">F-04 店家後台模組 v1.0</small>
+            </div>
+        </nav>
+
+        <!-- Main Dashboard View -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
+            
+            <!-- Dashboard Topbar Header -->
+            <div class="d-flex justify-content-between align-items-center content-header flex-wrap gap-3">
+                <div>
+                    <h1 class="fw-bold mb-1 fs-3">店家管理後台</h1>
+                    <p class="text-secondary mb-0">管理逢甲大轉盤所有美食店家、設定預算分類與導航資訊</p>
+                </div>
+                <div>
+                    <button class="btn btn-gradient" onclick="openAddModal()">
+                        <i class="fa-solid fa-plus me-1.5"></i> 新增店家
+                    </button>
+                </div>
+            </div>
+
+            <!-- Metrics Highlight Cards -->
+            <div class="row g-4 mb-4">
+                <div class="col-sm-6 col-lg-3">
+                    <div class="glass-card stat-card">
+                        <div class="stat-icon"><i class="fa-solid fa-store"></i></div>
+                        <span class="text-secondary fw-medium d-block mb-1">合作店家總數</span>
+                        <h3 id="statTotalStores" class="fw-black mb-0 fs-2 text-white">0</h3>
+                    </div>
+                </div>
+                
+                <div class="col-sm-6 col-lg-3">
+                    <div class="glass-card stat-card">
+                        <div class="stat-icon"><i class="fa-solid fa-person-walking"></i></div>
+                        <span class="text-secondary fw-medium d-block mb-1">平均步行距離</span>
+                        <h3 id="statAvgDistance" class="fw-black mb-0 fs-2 text-white">0 分鐘</h3>
+                    </div>
+                </div>
+
+                <div class="col-sm-6 col-lg-3">
+                    <div class="glass-card stat-card">
+                        <div class="stat-icon"><i class="fa-solid fa-bowl-food"></i></div>
+                        <span class="text-secondary fw-medium d-block mb-1">熱門餐點分類</span>
+                        <h3 id="statTopCategory" class="fw-black mb-0 fs-3 text-white">小吃</h3>
+                    </div>
+                </div>
+
+                <div class="col-sm-6 col-lg-3">
+                    <div class="glass-card stat-card">
+                        <div class="stat-icon"><i class="fa-solid fa-dollar-sign"></i></div>
+                        <span class="text-secondary fw-medium d-block mb-1">平價預算佔比</span>
+                        <h3 id="statBudgetRatio" class="fw-black mb-0 fs-2 text-white">0%</h3>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stores Table Card -->
+            <div class="glass-card p-4">
+                <!-- Search & Filters Header -->
+                <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+                    <div class="search-input-group">
+                        <i class="fa-solid fa-magnifying-glass text-secondary me-2"></i>
+                        <input type="text" id="storeSearchInput" placeholder="搜尋店家名稱、類型或價格..." oninput="handleSearch()">
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-outline-secondary btn-sm rounded-pill text-white border-secondary px-3" onclick="filterCategory('')">全部</button>
+                        <button class="btn btn-outline-secondary btn-sm rounded-pill text-white border-secondary px-3" onclick="filterCategory('小吃')">小吃</button>
+                        <button class="btn btn-outline-secondary btn-sm rounded-pill text-white border-secondary px-3" onclick="filterCategory('主食')">主食</button>
+                        <button class="btn btn-outline-secondary btn-sm rounded-pill text-white border-secondary px-3" onclick="filterCategory('甜點')">甜點</button>
+                        <button class="btn btn-outline-secondary btn-sm rounded-pill text-white border-secondary px-3" onclick="filterCategory('飲料')">飲料</button>
+                    </div>
+                </div>
+
+                <!-- Stores List Data Table -->
+                <div class="table-responsive">
+                    <table class="table custom-table align-middle">
+                        <thead>
+                            <tr>
+                                <th>編號</th>
+                                <th>店家名稱</th>
+                                <th>餐點類型</th>
+                                <th>預算區間</th>
+                                <th>步行時間</th>
+                                <th>導航連結</th>
+                                <th class="text-end">管理操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="storeTableBody">
+                            <!-- Dynamically loaded with JavaScript -->
+                            <tr>
+                                <td colspan="7" class="text-center text-muted py-5">
+                                    <div class="spinner-border spinner-border-sm text-secondary me-2" role="status"></div>
+                                    店家資料加載中...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </main>
+    </div>
+</div>
+
+<!-- Add / Edit Store Modal (F-04) -->
+<div class="modal fade" id="storeModal" tabindex="-1" aria-labelledby="storeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content modal-content-custom">
+            
+            <div class="modal-header modal-header-custom">
+                <h5 class="modal-title fw-bold" id="storeModalLabel">新增店家資料</h5>
+                <button type="button" class="btn-close btn-close-white opacity-75" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            
+            <form id="storeForm" onsubmit="handleFormSubmit(event)">
+                <div class="modal-body p-4">
+                    <!-- Store ID Hidden Field -->
+                    <input type="hidden" id="formStoreId">
+                    
+                    <!-- Store Name -->
+                    <div class="mb-3">
+                        <label for="formStoreName" class="form-label mb-1.5">店家名稱 <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control form-control-custom" id="formStoreName" required placeholder="例如：明倫蛋餅">
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <!-- Meal Type -->
+                        <div class="col-6">
+                            <label for="formMealType" class="form-label mb-1.5">餐點類型 <span class="text-danger">*</span></label>
+                            <select class="form-select form-control-custom" id="formMealType" required>
+                                <option value="小吃">🍢 特色小吃</option>
+                                <option value="主食">🍚 飽胃主食</option>
+                                <option value="甜點">🍦 療癒甜點</option>
+                                <option value="飲料">🥤 消暑飲料</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Price Range -->
+                        <div class="col-6">
+                            <label for="formPriceRange" class="form-label mb-1.5">預算區間 <span class="text-danger">*</span></label>
+                            <select class="form-select form-control-custom" id="formPriceRange" required>
+                                <option value="$">$ 100元內</option>
+                                <option value="$$">$$ 100-200元</option>
+                                <option value="$$$">$$$ 200元以上</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Walking Distance -->
+                    <div class="mb-3">
+                        <label for="formWalkingDistance" class="form-label mb-1.5">步行距離 (分鐘) <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-dark border-0 text-secondary" style="border-radius: 10px 0 0 10px;"><i class="fa-solid fa-person-walking"></i></span>
+                            <input type="number" class="form-control form-control-custom" id="formWalkingDistance" min="1" max="60" required placeholder="例如：3" style="border-radius: 0 10px 10px 0;">
+                        </div>
+                    </div>
+                    
+                    <!-- Google Maps URL -->
+                    <div class="mb-3">
+                        <label for="formMapsUrl" class="form-label mb-1.5">Google Maps 地圖連結</label>
+                        <input type="url" class="form-control form-control-custom" id="formMapsUrl" placeholder="https://www.google.com/maps/search/?api=1...">
+                        <div class="form-text text-secondary mt-1">留空將使用預設搜尋連結</div>
+                    </div>
+                </div>
+                
+                <div class="modal-footer modal-footer-custom justify-content-between">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill border-secondary text-white px-4 py-2" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-gradient px-4 py-2">
+                        <i class="fa-solid fa-circle-check me-1"></i> 儲存店家
+                    </button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+</div>
+
+<!-- Custom Confirmation Dialog (Mock Delete) -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content modal-content-custom text-center p-3">
+            <div class="modal-body">
+                <i class="fa-solid fa-circle-exclamation text-danger fs-1 mb-3"></i>
+                <h5 class="fw-bold mb-2">確定要刪除店家嗎？</h5>
+                <p class="text-secondary small mb-4">此動作將從轉盤中移除此店家且無法復原。</p>
+                <div class="d-flex gap-2 justify-content-center">
+                    <button type="button" class="btn btn-outline-secondary btn-sm px-3 rounded-pill text-white border-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" id="confirmDeleteBtn" class="btn btn-danger btn-sm px-3 rounded-pill">確定刪除</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Custom Glass Toast for Visual Feedback -->
+<div id="toastNotification" class="custom-toast">
+    <div class="custom-toast-icon"><i class="fa-solid fa-circle-check"></i></div>
+    <div>
+        <h6 id="toastTitle" class="fw-bold mb-0 text-white">操作成功</h6>
+        <small id="toastMessage" class="text-secondary">設定已更新！</small>
+    </div>
+</div>
+
+<!-- Bootstrap 5 JS Bundle -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    // 全域變數
+    let storesData = [];
+    let currentFilterCategory = '';
+    let bootstrapStoreModal = null;
+    let bootstrapDeleteModal = null;
+    let deleteTargetId = null;
+
+    // 啟動加載
+    window.addEventListener('DOMContentLoaded', () => {
+        bootstrapStoreModal = new bootstrap.Modal(document.getElementById('storeModal'));
+        bootstrapDeleteModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+        loadStores();
+    });
+
+    // 透過 API 獲取所有店家詳細資料
+    async function loadStores() {
+        try {
+            const response = await fetch('/api/admin/stores');
+            if (!response.ok) throw new Error("API 取得店家失敗");
+            storesData = await response.json();
+            renderTable();
+            updateMetrics();
+        } catch (error) {
+            console.error("無法載入後台店家資料，改用靜態模擬資料", error);
+            // 擬真的備用測試資料
+            storesData = [
+                { id: 1, name: "明倫蛋餅", price_range: "$", meal_type: "小吃", walking_distance: 2, google_maps_url: "https://www.google.com/maps/search/?api=1&query=明倫蛋餅+逢甲" },
+                { id: 2, name: "官芝霖大腸包小腸", price_range: "$", meal_type: "小吃", walking_distance: 3, google_maps_url: "https://www.google.com/maps/search/?api=1&query=官芝霖大腸包小腸+逢甲" },
+                { id: 3, name: "一家之薯起司馬鈴薯", price_range: "$", meal_type: "小吃", walking_distance: 4, google_maps_url: "https://www.google.com/maps/search/?api=1&query=一家之薯起司馬鈴薯+逢甲" },
+                { id: 4, name: "尊品原汁牛肉麵", price_range: "$$", meal_type: "主食", walking_distance: 5, google_maps_url: "https://www.google.com/maps/search/?api=1&query=尊品原汁牛肉麵+逢甲" },
+                { id: 5, name: "極味屋日式拉麵", price_range: "$$", meal_type: "主食", walking_distance: 3, google_maps_url: "https://www.google.com/maps/search/?api=1&query=極味屋日式拉麵+逢甲" },
+                { id: 6, name: "逢甲冰糖葫蘆", price_range: "$", meal_type: "甜點", walking_distance: 1, google_maps_url: "https://www.google.com/maps/search/?api=1&query=逢甲地瓜球+逢甲" },
+                { id: 7, name: "阿華黑輪店", price_range: "$", meal_type: "小吃", walking_distance: 4, google_maps_url: "https://www.google.com/maps/search/?api=1&query=阿華黑輪店+逢甲" },
+                { id: 8, name: "美濃木瓜牛奶", price_range: "$", meal_type: "飲料", walking_distance: 2, google_maps_url: "https://www.google.com/maps/search/?api=1&query=美濃木瓜牛奶+逢甲" }
+            ];
+            renderTable();
+            updateMetrics();
+        }
+    }
+
+    // 繪製店家表格
+    function renderTable(data = storesData) {
+        const tbody = document.getElementById('storeTableBody');
+        tbody.innerHTML = '';
+
+        // 篩選分類
+        let filtered = currentFilterCategory 
+            ? data.filter(s => s.meal_type === currentFilterCategory) 
+            : data;
+
+        // 搜尋篩選
+        const searchVal = document.getElementById('storeSearchInput').value.toLowerCase().trim();
+        if (searchVal) {
+            filtered = filtered.filter(s => 
+                s.name.toLowerCase().includes(searchVal) || 
+                s.meal_type.toLowerCase().includes(searchVal) ||
+                s.price_range.includes(searchVal)
+            );
+        }
+
+        if (filtered.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7" class="text-center text-secondary py-5">
+                        <i class="fa-solid fa-box-open fs-2 mb-2 d-block opacity-50"></i>
+                        找不到符合條件的店家
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        filtered.forEach(store => {
+            // 餐點類型 Badge 類別
+            let badgeClass = 'badge-snack';
+            let mealIcon = '🍢';
+            if (store.meal_type === '主食') { badgeClass = 'badge-main'; mealIcon = '🍚'; }
+            else if (store.meal_type === '甜點') { badgeClass = 'badge-dessert'; mealIcon = '🍦'; }
+            else if (store.meal_type === '飲料') { badgeClass = 'badge-drink'; mealIcon = '🥤'; }
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="fw-bold text-secondary font-outfit" style="width: 80px;">#${store.id}</td>
+                <td><strong class="text-white">${store.name}</strong></td>
+                <td><span class="badge-category ${badgeClass}">${mealIcon} ${store.meal_type}</span></td>
+                <td><span class="badge-price">${store.price_range}</span></td>
+                <td><span class="text-secondary font-outfit">🚶 ${store.walking_distance} 分鐘</span></td>
+                <td>
+                    <a href="${store.google_maps_url || '#'}" target="_blank" class="btn-action d-inline-flex text-decoration-none">
+                        <i class="fa-solid fa-map-location-dot"></i>
+                    </a>
+                </td>
+                <td class="text-end">
+                    <div class="d-inline-flex gap-2">
+                        <button class="btn-action btn-action-edit" onclick="openEditModal(${store.id})" title="編輯店家">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                        </button>
+                        <button class="btn-action btn-action-delete" onclick="triggerDelete(${store.id})" title="刪除店家">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    // 更新指標卡數據
+    function updateMetrics() {
+        document.getElementById('statTotalStores').textContent = storesData.length;
+
+        // 平均步行時間
+        const avgDist = storesData.length > 0 
+            ? (storesData.reduce((sum, s) => sum + Number(s.walking_distance), 0) / storesData.length).toFixed(1) 
+            : 0;
+        document.getElementById('statAvgDistance').textContent = `${avgDist} 分鐘`;
+
+        // 最熱門分類
+        const categories = {};
+        storesData.forEach(s => {
+            categories[s.meal_type] = (categories[s.meal_type] || 0) + 1;
+        });
+        let topCat = '小吃';
+        let maxCount = 0;
+        for (const cat in categories) {
+            if (categories[cat] > maxCount) {
+                maxCount = categories[cat];
+                topCat = cat;
+            }
+        }
+        document.getElementById('statTopCategory').textContent = topCat;
+
+        // 平價店家佔比 ($ 價位)
+        const budgetCount = storesData.filter(s => s.price_range === '$').length;
+        const ratio = storesData.length > 0 ? Math.round((budgetCount / storesData.length) * 100) : 0;
+        document.getElementById('statBudgetRatio').textContent = `${ratio}%`;
+    }
+
+    // 搜尋與篩選操作
+    function handleSearch() {
+        renderTable();
+    }
+
+    function filterCategory(cat) {
+        currentFilterCategory = cat;
+        // 更新按鈕 active 樣式
+        const buttons = document.querySelectorAll('.d-flex.gap-2 button');
+        buttons.forEach(btn => {
+            if ((cat === '' && btn.textContent === '全部') || btn.textContent === cat) {
+                btn.classList.remove('btn-outline-secondary');
+                btn.classList.add('btn-light', 'text-dark');
+            } else {
+                btn.classList.remove('btn-light', 'text-dark');
+                btn.classList.add('btn-outline-secondary');
+            }
+        });
+        renderTable();
+    }
+
+    // 開啟新增 Modal
+    function openAddModal() {
+        document.getElementById('storeModalLabel').textContent = '新增店家資料';
+        document.getElementById('formStoreId').value = '';
+        document.getElementById('storeForm').reset();
+        bootstrapStoreModal.show();
+    }
+
+    // 開啟編輯 Modal
+    function openEditModal(storeId) {
+        const store = storesData.find(s => s.id === storeId);
+        if (!store) return;
+
+        document.getElementById('storeModalLabel').textContent = '編輯店家資料';
+        document.getElementById('formStoreId').value = store.id;
+        document.getElementById('formStoreName').value = store.name;
+        document.getElementById('formMealType').value = store.meal_type;
+        document.getElementById('formPriceRange').value = store.price_range;
+        document.getElementById('formWalkingDistance').value = store.walking_distance;
+        document.getElementById('formMapsUrl').value = store.google_maps_url || '';
+
+        bootstrapStoreModal.show();
+    }
+
+    // 送出新增 / 編輯表單 (整合後端 API)
+    async function handleFormSubmit(event) {
+        event.preventDefault();
+        
+        const storeId = document.getElementById('formStoreId').value;
+        const name = document.getElementById('formStoreName').value;
+        const mealType = document.getElementById('formMealType').value;
+        const priceRange = document.getElementById('formPriceRange').value;
+        const walkingDistance = Number(document.getElementById('formWalkingDistance').value);
+        let mapsUrl = document.getElementById('formMapsUrl').value.trim();
+
+        if (!mapsUrl) {
+            mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name)}+逢甲`;
+        }
+
+        const payload = {
+            name: name,
+            meal_type: mealType,
+            price_range: priceRange,
+            walking_distance: walkingDistance,
+            google_maps_url: mapsUrl
+        };
+
+        try {
+            let response;
+            if (storeId) {
+                // 編輯模式
+                response = await fetch(`/api/admin/stores/${storeId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!response.ok) throw new Error("更新失敗");
+                const resData = await response.json();
+                showToast('更新成功', `『${name}』的資料已經成功修改！`);
+            } else {
+                // 新增模式
+                response = await fetch('/api/admin/stores', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!response.ok) throw new Error("新增失敗");
+                const resData = await response.json();
+                showToast('新增成功', `『${name}』已成功加入美食轉盤清單！`);
+            }
+
+            bootstrapStoreModal.hide();
+            await loadStores(); // 重新從後端載入最新資料
+        } catch (error) {
+            console.error(error);
+            alert("操作失敗，請檢查後端連線！");
+        }
+    }
+
+    // 觸發刪除
+    function triggerDelete(storeId) {
+        deleteTargetId = storeId;
+        bootstrapDeleteModal.show();
+    }
+
+    // 確認刪除事件綁定 (整合後端 API)
+    document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
+        if (deleteTargetId !== null) {
+            const store = storesData.find(s => s.id === deleteTargetId);
+            if (store) {
+                try {
+                    const response = await fetch(`/api/admin/stores/${deleteTargetId}`, {
+                        method: 'DELETE'
+                    });
+                    if (!response.ok) throw new Error("刪除失敗");
+                    
+                    showToast('刪除成功', `『${store.name}』已從系統中成功刪除。`, '#f43f5e', 'fa-circle-exclamation');
+                    await loadStores(); // 重新載入
+                } catch (error) {
+                    console.error(error);
+                    alert("刪除失敗，請檢查後端連線！");
+                }
+            }
+            deleteTargetId = null;
+        }
+        bootstrapDeleteModal.hide();
+    });
+
+    // 顯示 Glass Toast 提示
+    function showToast(title, message, borderLeftColor = '#10b981', iconClass = 'fa-circle-check') {
+        const toast = document.getElementById('toastNotification');
+        const iconContainer = toast.querySelector('.custom-toast-icon');
+        
+        toast.style.borderLeftColor = borderLeftColor;
+        iconContainer.innerHTML = `<i class="fa-solid ${iconClass}"></i>`;
+        iconContainer.style.color = borderLeftColor;
+        
+        document.getElementById('toastTitle').textContent = title;
+        document.getElementById('toastMessage').textContent = message;
+        
+        toast.classList.add('show');
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 3500);
+    }
+</script>
+
+</body>
+</html>
