@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>逢甲美食大轉盤</title>
+    <!-- Google Fonts & DNS Preconnects for Instant Response -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://www.google.com" crossorigin>
+    <link rel="preconnect" href="https://images.unsplash.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&family=Outfit:wght@600;800&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <main class="app-container">
+        <header class="app-header">
+            <h1 class="title">逢甲美食大轉盤 <span class="subtitle">今天吃什麼？</span></h1>
+        </header>
+
+        <section class="wheel-section">
+            <!-- 轉盤外框特效 -->
+            <div class="wheel-ring"></div>
+            <!-- 指針 -->
+            <div class="wheel-pointer">
+                <div class="pointer-triangle"></div>
+                <div class="pointer-center"></div>
+            </div>
+            
+            <!-- 轉盤本體 (Canvas) -->
+            <div class="canvas-container">
+                <canvas id="wheelCanvas" width="600" height="600"></canvas>
+            </div>
+        </section>
+
+        <section class="controls">
+            <div class="d-flex flex-column gap-3 align-items-center w-100">
+                <button id="spinBtn" class="spin-button">開始轉動！</button>
+                <button id="filterTriggerBtn" class="filter-button" data-bs-toggle="offcanvas" data-bs-target="#filterDrawer" aria-controls="filterDrawer">
+                    🎯 篩選今日美食條件
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <!-- 美食情報卡 Modal (F-03 店家詳情展示模組) -->
+    <div class="modal fade" id="foodInfoModal" tabindex="-1" aria-labelledby="foodInfoModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden" style="background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);">
+          
+          <!-- 頂部視覺橫幅 -->
+          <div class="position-relative ratio ratio-21x9 bg-light overflow-hidden" style="max-height: 250px;">
+            <img id="modalFeaturedImg" src="" class="img-fluid w-100 h-100 object-fit-cover" alt="店家精選餐點">
+            <div class="position-absolute top-0 end-0 m-3">
+              <button type="button" class="btn-close btn-close-white bg-dark p-2 rounded-circle opacity-75 shadow-sm" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="position-absolute bottom-0 start-0 m-3 d-flex gap-2">
+              <span id="modalWalkingDistance" class="badge bg-dark bg-opacity-75 text-white py-2 px-3 rounded-pill">🚶 步行 3 分鐘</span>
+              <span id="modalRating" class="badge bg-warning text-dark py-2 px-3 fw-bold rounded-pill">⭐ 4.8 (500+評價)</span>
+            </div>
+          </div>
+
+          <!-- Modal 主要內容區 -->
+          <div class="modal-body p-4 text-start">
+            <!-- 店名與基本類型標籤 -->
+            <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+              <div>
+                <h2 class="modal-title fw-black text-dark mb-1 fs-3" id="modalStoreName">極味屋日式拉麵</h2>
+                <div class="d-flex gap-2 flex-wrap mt-2">
+                  <span id="modalMealType" class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 rounded-pill px-3 py-2">🍜 日式拉麵</span>
+                  <span id="modalPriceRange" class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 rounded-pill px-3 py-2">$$ 中平價位</span>
+                  <span id="modalOpenStatus" class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill px-3 py-2">🟢 營業中 (至 22:00)</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 店家描述 -->
+            <p id="modalDescription" class="text-secondary mb-4 fs-6">
+              「正宗九州豚骨拉麵，湯頭濃郁滑順，叉燒肥而不膩。逢甲學生憑學生證可免費加麵一次！」
+            </p>
+
+            <!-- 特約優惠與特色區 -->
+            <div class="row g-3 mb-4">
+              <div class="col-12">
+                <div class="p-3 rounded-3 border-0 shadow-sm" style="background: linear-gradient(135deg, #FFF9E6 0%, #FFF3CD 100%); border-left: 5px solid #FFC107 !important;">
+                  <div class="d-flex align-items-center mb-2">
+                    <span class="fs-4 me-2">🎁</span>
+                    <h5 class="fw-bold text-warning-emphasis m-0" style="font-size: 1.1rem;">轉盤專屬特約優惠</h5>
+                  </div>
+                  <p id="modalSpecialOffer" class="small text-secondary mb-0">
+                    出示此轉盤結果畫面，<strong>點選主餐即免費贈送「招牌冷泡茶」一杯</strong>！
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- 推薦必點 -->
+            <div class="mb-2">
+              <h6 class="fw-bold text-dark mb-2">🔥 推薦必點</h6>
+              <div id="modalRecommendedItems" class="d-flex gap-2 overflow-x-auto pb-2" style="scrollbar-width: none; -ms-overflow-style: none;">
+                <!-- 由 JS 動態繪製 -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Modal 底部按鈕區 -->
+          <div class="modal-footer bg-light border-top-0 p-3 d-flex flex-wrap gap-2 justify-content-between">
+            <div class="d-flex gap-2 col-12 col-sm-auto mb-2 mb-sm-0">
+              <a id="modalMapBtn" href="#" target="_blank" class="btn btn-outline-primary py-2 px-3 rounded-pill d-flex align-items-center justify-content-center flex-fill">
+                <span class="me-1">📍</span> 地圖導航
+              </a>
+              <button class="btn btn-outline-secondary py-2 px-3 rounded-pill d-flex align-items-center justify-content-center flex-fill" onclick="copyShareLink()">
+                <span class="me-1">🔗</span> 分享
+              </button>
+            </div>
+
+            <div class="d-flex gap-2 col-12 col-sm-auto flex-fill justify-content-sm-end">
+              <button type="button" class="btn btn-light py-2 px-4 rounded-pill border fw-bold flex-fill flex-sm-grow-0" data-bs-dismiss="modal">
+                再轉一次 🔄
+              </button>
+              <button type="button" class="btn text-white py-2 px-4 rounded-pill fw-bold flex-fill flex-sm-grow-0" style="background: linear-gradient(45deg, #FF6B6B, #FF8E53); box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);" data-bs-dismiss="modal">
+                就吃這家！ 😋
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Offcanvas 篩選抽屜 (F-02 價格與類型篩選模組) -->
+    <div class="offcanvas offcanvas-bottom rounded-top-4" tabindex="-1" id="filterDrawer" aria-labelledby="filterDrawerLabel" style="height: auto; max-height: 85vh; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(15px); border-top: 1px solid rgba(255, 255, 255, 0.15); color: #f8fafc; z-index: 1055;">
+      <div class="offcanvas-header border-bottom border-secondary border-opacity-25 px-4 py-3">
+        <h5 class="offcanvas-title fw-bold d-flex align-items-center" id="filterDrawerLabel">
+          <span class="me-2">🎯</span> 篩選今日美食條件
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+      </div>
+      <div class="offcanvas-body p-4">
+        <!-- 預算區間 (Price Range) -->
+        <div class="mb-4 text-start">
+          <h6 class="fw-bold text-secondary mb-3 d-flex align-items-center" style="font-size: 0.95rem; letter-spacing: 1px;">
+            💰 預算區間
+          </h6>
+          <div class="d-flex flex-wrap gap-2">
+            <input type="checkbox" class="btn-check" id="price-1" value="$" autocomplete="off" checked>
+            <label class="btn btn-outline-custom rounded-pill px-3 py-2 fs-7" for="price-1">
+              $ 100元內 (平價)
+            </label>
+            
+            <input type="checkbox" class="btn-check" id="price-2" value="$$" autocomplete="off" checked>
+            <label class="btn btn-outline-custom rounded-pill px-3 py-2 fs-7" for="price-2">
+              $$ 100-200元 (中價)
+            </label>
+
+            <input type="checkbox" class="btn-check" id="price-3" value="$$$" autocomplete="off" checked>
+            <label class="btn btn-outline-custom rounded-pill px-3 py-2 fs-7" for="price-3">
+              $$$ 200元以上 (高檔)
+            </label>
+          </div>
+        </div>
+
+        <!-- 餐點類型 (Meal Type) -->
+        <div class="mb-4 text-start">
+          <h6 class="fw-bold text-secondary mb-3 d-flex align-items-center" style="font-size: 0.95rem; letter-spacing: 1px;">
+            🍜 餐點類型
+          </h6>
+          <div class="d-flex flex-wrap gap-2">
+            <input type="checkbox" class="btn-check" id="meal-1" value="小吃" autocomplete="off" checked>
+            <label class="btn btn-outline-custom rounded-pill px-3 py-2 fs-7" for="meal-1">
+              🍢 特色小吃
+            </label>
+            
+            <input type="checkbox" class="btn-check" id="meal-2" value="主食" autocomplete="off" checked>
+            <label class="btn btn-outline-custom rounded-pill px-3 py-2 fs-7" for="meal-2">
+              🍚 飽胃主食
+            </label>
+
+            <input type="checkbox" class="btn-check" id="meal-3" value="甜點" autocomplete="off" checked>
+            <label class="btn btn-outline-custom rounded-pill px-3 py-2 fs-7" for="meal-3">
+              🍦 療癒甜點
+            </label>
+
+            <input type="checkbox" class="btn-check" id="meal-4" value="飲料" autocomplete="off" checked>
+            <label class="btn btn-outline-custom rounded-pill px-3 py-2 fs-7" for="meal-4">
+              🥤 消暑飲料
+            </label>
+          </div>
+        </div>
+
+        <!-- 控制按鈕區 -->
+        <div class="d-flex gap-3 mt-4 pt-3 border-top border-secondary border-opacity-25">
+          <button type="button" id="resetFilterBtn" class="btn btn-outline-light rounded-pill py-2.5 px-4 fw-bold flex-fill fs-7">
+            重設條件
+          </button>
+          <button type="button" id="applyFilterBtn" class="btn text-white rounded-pill py-2.5 px-4 fw-bold flex-fill fs-7" style="background: linear-gradient(45deg, #FF6B6B, #FF8E53); box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);">
+            套用篩選
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
