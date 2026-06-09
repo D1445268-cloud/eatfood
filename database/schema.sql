@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS stores (
     special_offer TEXT,          -- 轉盤專屬優惠
     description TEXT,            -- 店家特色描述 (用於 Modal 顯示)
     featured_image TEXT,         -- 精選相片 URL
+    image_url TEXT,              -- 額外 Google Map 照片網址 (F-03 專用)
     recommended_items TEXT,      -- 推薦必點餐點 (以分號分隔儲存)
     dining_scenario TEXT,        -- 適合用餐場景 (分號分隔)
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -31,3 +32,15 @@ CREATE INDEX IF NOT EXISTS idx_price_range ON stores(price_range);
 CREATE INDEX IF NOT EXISTS idx_avg_price ON stores(avg_price);
 CREATE INDEX IF NOT EXISTS idx_walking_distance ON stores(walking_distance);
 
+-- 使用者收藏店家資料表 (F-05 我的最愛與收藏模組)
+CREATE TABLE IF NOT EXISTS favorites (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT NOT NULL DEFAULT 'default_user',  -- 支援未來多使用者擴充，預設為 default_user
+    store_id INTEGER NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE,
+    UNIQUE(user_id, store_id)                      -- 避免重複收藏同一個店家
+);
+
+-- 建立索引以提升收藏查詢效能
+CREATE INDEX IF NOT EXISTS idx_favorites_user_id ON favorites(user_id);

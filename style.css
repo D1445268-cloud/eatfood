@@ -266,16 +266,38 @@ canvas {
     touch-action: manipulation;
 }
 
-/* 2. 訂製高質感平滑淡入＋Q彈放大動畫 (Anticipatory Scale-up) */
+/* 2. 訂製頂級行動端動畫效能優化 (60fps/120fps 零卡頓，帶有 GPU 硬體加速) */
 .modal.fade .modal-content {
-    transform: scale(0.9) translateY(20px);
+    transform: scale(0.96) translate3d(0, 15px, 0); /* 降低初始縮放與位移落差，減少流暢度負擔 */
     opacity: 0;
-    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+    will-change: transform, opacity; /* 啟用硬體加速 */
+    backface-visibility: hidden; /* 防止 WebKit (iOS Safari) 縮放時閃爍 */
+    -webkit-backface-visibility: hidden;
+    perspective: 1000px; /* 穩定 3D 空間 */
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .modal.show .modal-content {
-    transform: scale(1) translateY(0);
+    transform: scale(1) translate3d(0, 0, 0); /* 強制開啟 GPU 3D 渲染 */
     opacity: 1;
+}
+
+.modal-dialog {
+    will-change: transform;
+}
+
+.modal {
+    -webkit-overflow-scrolling: touch; /* 確保 iOS 原生彈性滾動流暢 */
+}
+
+/* 優化背景遮罩 (Backdrop) 的過渡效能 */
+.modal-backdrop.fade {
+    opacity: 0;
+    transition: opacity 0.2s linear;
+    will-change: opacity;
+}
+.modal-backdrop.show {
+    opacity: 0.5;
 }
 
 
@@ -371,3 +393,335 @@ canvas {
 .btn-close-white {
     filter: invert(1) grayscale(1) brightness(2);
 }
+
+/* 收藏按鈕樣式 */
+.favorite-toggle-btn {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    outline: none !important;
+    flex-shrink: 0;
+    margin-left: 1rem;
+}
+
+.favorite-toggle-btn:hover {
+    transform: scale(1.15);
+}
+
+.favorite-toggle-btn:active {
+    transform: scale(0.9);
+}
+
+.favorite-toggle-btn .heart-icon {
+    color: #94a3b8;
+    fill: transparent;
+    transition: color 0.3s ease, fill 0.3s ease, filter 0.3s ease;
+}
+
+.favorite-toggle-btn.favorited .heart-icon {
+    color: #f43f5e;
+    fill: #f43f5e;
+    filter: drop-shadow(0 0 5px rgba(244, 63, 94, 0.5));
+}
+
+/* 行動端與響應式微調 (F-03 UI 層次優化) */
+@media (max-width: 576px) {
+    .modal-body {
+        padding: 1.25rem !important;
+    }
+    
+    #modalStoreName {
+        font-size: 1.45rem !important;
+        line-height: 1.3;
+    }
+    
+    .modal-body .badge {
+        padding: 0.4rem 0.75rem !important;
+        font-size: 0.75rem !important;
+    }
+    
+    .modal-footer {
+        padding: 1rem !important;
+    }
+    
+    .favorite-toggle-btn .heart-icon {
+        width: 24px;
+        height: 24px;
+    }
+}
+
+/* F-02: 篩選網格佈局與觸控優化 */
+.filter-grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+    width: 100%;
+}
+
+.filter-grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+    width: 100%;
+}
+
+/* 重新定義自訂篩選膠囊，改為大面積矩形以利手機觸控 */
+.btn-outline-custom {
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+    width: 100%;
+    min-height: 48px; /* 符合國際無障礙與 iOS/Android 觸控目標尺寸 (min 44px) */
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    padding: 0.65rem 0.5rem !important;
+    font-size: 0.85rem !important;
+    font-weight: 700 !important;
+    border-radius: 12px !important; /* 改用圓角矩形，提供更好的指尖點選穩定度 */
+    letter-spacing: 0.5px;
+    border: 1.5px solid rgba(255, 255, 255, 0.15) !important;
+    background-color: rgba(255, 255, 255, 0.03) !important;
+    color: #cbd5e1 !important;
+    transition: color 0.2s ease, border-color 0.2s ease, transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.2s ease !important;
+}
+
+/* 建立漸層遮罩偽元素，用以實現 linear-gradient 的平滑過渡 (因瀏覽器原生不支援 gradient 直接 transition) */
+.btn-outline-custom::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%);
+    z-index: -1;
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out;
+}
+
+.btn-outline-custom:hover {
+    background-color: rgba(255, 255, 255, 0.08) !important;
+    border-color: rgba(255, 255, 255, 0.35) !important;
+    color: #fff !important;
+}
+
+/* 點按瞬間的微小 Q彈收縮回饋 (提升指尖點擊時的即時反應速度感) */
+.btn-outline-custom:active {
+    transform: scale(0.95) !important;
+    transition: transform 0.05s ease !important;
+}
+
+/* 點選後的選中狀態 */
+.btn-check:checked + .btn-outline-custom {
+    border-color: transparent !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(255, 107, 107, 0.35) !important;
+    transform: scale(1.03) !important;
+}
+
+/* 選中時讓偽元素漸層顯現，達到平滑淡入效果 */
+.btn-check:checked + .btn-outline-custom::before {
+    opacity: 1;
+}
+
+@media (max-width: 375px) {
+    /* 針對螢幕寬度極窄之手機 (例如 iPhone SE) 微調預算區間網格，防止字體過小擠壓 */
+    .filter-grid-3 {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.4rem;
+    }
+    
+    .btn-outline-custom {
+        font-size: 0.78rem !important;
+        padding: 0.5rem 0.2rem !important;
+        min-height: 44px;
+    }
+}
+
+/* --- F-06: 評論與回報機制模組樣式 --- */
+
+/* 自訂頁籤按鈕樣式 */
+.tab-btn-custom {
+    color: #64748b !important;
+    background: transparent !important;
+    border: none !important;
+    transition: all 0.3s ease;
+    font-size: 0.95rem;
+}
+
+.tab-btn-custom:hover {
+    color: #334155 !important;
+    background: rgba(0, 0, 0, 0.04) !important;
+}
+
+.tab-btn-custom.active {
+    color: #fff !important;
+    background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%) !important;
+    box-shadow: 0 4px 12px rgba(255, 107, 107, 0.25) !important;
+}
+
+#storeModalTab.nav-tabs {
+    border-bottom: none !important;
+}
+#storeModalTab .nav-link {
+    border: none !important;
+}
+
+/* 互動星級評分星星樣式 */
+.star-rating {
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+}
+
+.star-label {
+    font-size: 2.2rem;
+    color: #cbd5e1;
+    cursor: pointer;
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), color 0.2s;
+    touch-action: manipulation;
+    user-select: none;
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* 當懸停於某顆星星或其右側星星(在 reversed 渲染下即為畫面上左側的星星)時，或點選某顆星星時 */
+.star-label:hover,
+.star-label:hover ~ .star-label,
+.star-rating input:checked ~ .star-label {
+    color: #fbbf24;
+    transform: scale(1.15);
+}
+
+.star-label:active {
+    transform: scale(0.9);
+}
+
+/* 糾錯頁面排版與按鈕樣式 */
+.report-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+    width: 100%;
+}
+
+.btn-outline-report {
+    position: relative;
+    width: 100%;
+    min-height: 48px;
+    display: inline-flex !important;
+    align-items: center;
+    padding: 0.65rem 0.75rem !important;
+    font-size: 0.85rem !important;
+    font-weight: 700 !important;
+    border-radius: 12px !important;
+    border: 1.5px solid #e2e8f0 !important;
+    background-color: #f8fafc !important;
+    color: #475569 !important;
+    transition: all 0.2s ease;
+    text-align: left;
+    touch-action: manipulation;
+}
+
+.btn-outline-report:hover {
+    background-color: #f1f5f9 !important;
+    border-color: #cbd5e1 !important;
+    color: #1e293b !important;
+}
+
+.btn-outline-report:active {
+    transform: scale(0.97);
+}
+
+.btn-outline-report .check-icon {
+    width: 18px;
+    height: 18px;
+    border: 2px solid #cbd5e1;
+    border-radius: 4px;
+    display: inline-block;
+    position: relative;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+
+.btn-check:checked + .btn-outline-report {
+    border-color: #f43f5e !important;
+    background-color: rgba(244, 63, 94, 0.05) !important;
+    color: #e11d48 !important;
+    box-shadow: 0 4px 12px rgba(244, 63, 94, 0.1) !important;
+}
+
+.btn-check:checked + .btn-outline-report .check-icon {
+    border-color: #f43f5e;
+    background-color: #f43f5e;
+}
+
+.btn-check:checked + .btn-outline-report .check-icon::after {
+    content: '';
+    position: absolute;
+    left: 5px;
+    top: 2px;
+    width: 4px;
+    height: 8px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+/* 動態新增評論的淡入效果 */
+.animate-fade-in {
+    animation: fadeIn 0.4s ease-out forwards;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 375px) {
+    .report-grid {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+    .btn-outline-report {
+        min-height: 44px;
+        font-size: 0.8rem !important;
+    }
+}
+
+/* 評論與回報送出按鈕行動端點選微觀反饋 (F-06 專用) */
+#submitReportBtn,
+#reviewForm button[type="submit"] {
+    transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.2s ease, filter 0.2s ease !important;
+    touch-action: manipulation;
+}
+
+#submitReportBtn:hover,
+#reviewForm button[type="submit"]:hover {
+    filter: brightness(1.06);
+    transform: translateY(-1px);
+}
+
+#submitReportBtn:active,
+#reviewForm button[type="submit"]:active {
+    transform: scale(0.96) translateY(0) !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;
+    transition: transform 0.05s ease !important;
+}
+
+

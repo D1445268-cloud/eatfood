@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
+import os
+import json
 import datetime
+import urllib.request
+import urllib.parse
 from flask import Blueprint, jsonify, abort, request
 from app.models.store import StoreModel
 
@@ -133,6 +137,7 @@ def get_store_detail(store_id):
             "closing_time": closing_time,
             "special_offer": store.get("special_offer") or "憑本轉盤結果畫面，可享該店九折特惠！",
             "featured_image": store.get("featured_image") or "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80",
+            "image_url": store.get("image_url"),
             "recommended_items": recommended_items,
             
             # 其他擴充欄位 (供未來前端升級使用)
@@ -143,5 +148,158 @@ def get_store_detail(store_id):
         }
         
         return jsonify(detail_data)
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@store_bp.route('/api/stores/<int:store_id>/photo', methods=['GET'])
+def get_store_photo(store_id):
+    """
+    從 Google Places API 獲取店家的真實相片，若失敗則回傳預設精選相片。
+    """
+    # 1. 取得店家基本資訊
+    store = StoreModel.get_by_id(store_id)
+    if not store:
+        return jsonify({"status": "error", "message": "找不到該店家資料"}), 404
+        
+    # 2. 獲取 Google Places API 密鑰 (從環境變數讀取)
+    api_key = os.environ.get('GOOGLE_PLACES_API_KEY')
+    
+    # 預設的備用相片 URL (優先使用手動設置之真實相片，其次為特色圖，最後為預設 Unsplash 美食照)
+    fallback_image = store.get("image_url") or store.get("featured_image") or "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80"
+    
+    if not api_key:
+        # 如果未設定金鑰，直接回傳備用相片 URL 進行模擬
+        return jsonify({
+            "status": "success", 
+            "photo_url": fallback_image, 
+            "source": "fallback (API Key not set)"
+        })
+        
+    try:
+        # 如果傳入 place_id 參數則優先使用，否則使用店名搜尋
+        place_id = request.args.get('place_id')
+        photo_reference = None
+        
+        if place_id:
+            # 方案 A：已有 place_id，直接查詢 Place Details 取得照片資訊
+            details_url = f"https://maps.googleapis.com/maps/api/place/details/json?place_id={place_id}&fields=photos&key={api_key}"
+            req = urllib.request.Request(details_url, headers={'User-Agent': 'Mozilla/5.0'})
+            with urllib.request.urlopen(req, timeout=5) as response:
+                result = json.loads(response.read().decode('utf-8'))
+                
+            photos = result.get('result', {}).get('photos', [])
+            if photos:
+                photo_reference = photos[0].get('photo_reference')
+        else:
+            # 方案 B：使用店名進行 Text Search 或 Find Place
+            query_str = f"{store['name']} 逢甲"
+            search_url = f"https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input={urllib.parse.quote(query_str)}&inputtype=textquery&fields=photos,place_id&key={api_key}"
+            req = urllib.request.Request(search_url, headers={'User-Agent': 'Mozilla/5.0'})
+            with urllib.request.urlopen(req, timeout=5) as response:
+                result = json.loads(response.read().decode('utf-8'))
+                
+            candidates = result.get('candidates', [])
+            if candidates and candidates[0].get('photos'):
+                photo_reference = candidates[0]['photos'][0].get('photo_reference')
+                
+        # 3. 如果成功取得 photo_reference，轉換為可顯示的圖片 URL
+        if photo_reference:
+            # 建構 Google Places Photo URL (最大寬度設定為 800px)
+            photo_url = f"https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference={photo_reference}&key={api_key}"
+            return jsonify({
+                "status": "success",
+                "photo_url": photo_url,
+                "source": "google_places_api"
+            })
+            
+    except Exception as e:
+        print(f"[API Error] 獲取 Google Place 相片時發生異常: {e}")
+        
+    # 4. 發生任何錯誤或無相片時，回傳備用相片 URL
+    return jsonify({
+        "status": "success",
+        "photo_url": fallback_image,
+        "source": "fallback (API Error or No Photo)"
+    })
+
+@store_bp.route('/api/stores', methods=['POST'])
+def create_store():
+    """新增店家資料 (F-04)"""
+    try:
+        data = request.get_json() or {}
+        name = data.get('name')
+        if not name or not name.strip():
+            return jsonify({"status": "error", "message": "店名為必填欄位"}), 400
+            
+        meal_type = data.get('meal_type')
+        price_range = data.get('price_range')
+        if not meal_type or not price_range:
+            return jsonify({"status": "error", "message": "餐點類型與價格區間為必填欄位"}), 400
+            
+        new_id = StoreModel.create(
+            name=name.strip(),
+            price_range=price_range,
+            avg_price=data.get('avg_price'),
+            meal_type=meal_type,
+            walking_distance=data.get('walking_distance'),
+            sub_area=data.get('sub_area'),
+            latitude=data.get('latitude'),
+            longitude=data.get('longitude'),
+            google_maps_url=data.get('google_maps_url'),
+            rating=data.get('rating'),
+            reviews_count=data.get('reviews_count'),
+            opening_hours=data.get('opening_hours'),
+            off_days=data.get('off_days'),
+            student_discount=data.get('student_discount'),
+            special_offer=data.get('special_offer'),
+            description=data.get('description'),
+            featured_image=data.get('featured_image'),
+            recommended_items=data.get('recommended_items'),
+            dining_scenario=data.get('dining_scenario')
+        )
+        
+        if new_id:
+            return jsonify({"status": "success", "message": "店家新增成功", "store_id": new_id}), 201
+        else:
+            return jsonify({"status": "error", "message": "寫入資料庫失敗"}), 500
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@store_bp.route('/api/stores/<int:store_id>', methods=['PUT'])
+def update_store(store_id):
+    """更新店家資料 (F-04)"""
+    try:
+        data = request.get_json() or {}
+        
+        # 檢查店家是否存在
+        store = StoreModel.get_by_id(store_id)
+        if not store:
+            return jsonify({"status": "error", "message": "找不到該店家資料"}), 404
+            
+        # 排除不可編輯的系統欄位
+        data.pop('id', None)
+        data.pop('created_at', None)
+        
+        success = StoreModel.update(store_id, **data)
+        if success:
+            return jsonify({"status": "success", "message": "店家資料更新成功"}), 200
+        else:
+            return jsonify({"status": "error", "message": "資料更新失敗或無欄位變更"}), 400
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@store_bp.route('/api/stores/<int:store_id>', methods=['DELETE'])
+def delete_store(store_id):
+    """刪除店家資料 (F-04)"""
+    try:
+        store = StoreModel.get_by_id(store_id)
+        if not store:
+            return jsonify({"status": "error", "message": "找不到該店家資料"}), 404
+            
+        success = StoreModel.delete(store_id)
+        if success:
+            return jsonify({"status": "success", "message": "店家資料已成功刪除"}), 200
+        else:
+            return jsonify({"status": "error", "message": "刪除失敗"}), 500
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500

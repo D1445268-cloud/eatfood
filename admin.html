@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>逢甲美食大轉盤 - 店家管理後台</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Outfit:wght@600;800&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --primary-color: #f43f5e;
+            --primary-hover: #e11d48;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --sidebar-bg: #1e293b;
+        }
+
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        /* Glassmorphism Cards */
+        .glass-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        /* 導覽列與側邊欄 */
+        .admin-header {
+            background-color: var(--sidebar-bg);
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .sidebar {
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--card-border);
+            min-height: calc(100vh - 56px);
+        }
+
+        .sidebar .nav-link {
+            color: var(--text-secondary);
+            font-weight: 500;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            margin: 0.2rem 0.5rem;
+            transition: all 0.2s ease;
+        }
+
+        .sidebar .nav-link:hover, .sidebar .nav-link.active {
+            color: #fff;
+            background-color: var(--primary-color);
+        }
+
+        /* 表單元素美化 */
+        .form-label {
+            color: #cbd5e1;
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 0.4rem;
+        }
+
+        .form-control, .form-select {
+            background-color: rgba(15, 23, 42, 0.6) !important;
+            border: 1.5px solid rgba(255, 255, 255, 0.15) !important;
+            color: #fff !important;
+            border-radius: 10px;
+            padding: 0.6rem 0.9rem;
+            font-size: 0.95rem;
+            transition: all 0.25s ease-in-out;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-color) !important;
+            box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.25) !important;
+            outline: none;
+        }
+
+        .form-control::placeholder {
+            color: #64748b;
+        }
+
+        /* 特色區塊表單卡片 */
+        .form-section-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #fff;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 0.5rem;
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* 表格美化 */
+        .table {
+            color: #e2e8f0 !important;
+        }
+
+        .table th {
+            color: var(--text-secondary);
+            font-weight: 600;
+            border-bottom: 2px solid rgba(255,255,255,0.1) !important;
+        }
+
+        .table td {
+            border-bottom: 1px solid rgba(255,255,255,0.05) !important;
+            vertical-align: middle;
+        }
+
+        /* 儲存按鈕漸層 */
+        .btn-gradient {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #f59e0b 100%);
+            color: #fff;
+            border: none;
+            font-weight: 700;
+            border-radius: 10px;
+            padding: 0.65rem 1.8rem;
+            box-shadow: 0 4px 15px rgba(244, 63, 94, 0.3);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn-gradient:hover {
+            color: #fff;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(244, 63, 94, 0.4);
+        }
+
+        .btn-gradient:active {
+            transform: scale(0.98);
+        }
+
+        /* 輔助標記 */
+        .text-danger-custom {
+            color: #f43f5e;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 頂部導覽列 -->
+    <header class="navbar navbar-dark sticky-top admin-header p-2 shadow">
+        <div class="container-fluid">
+            <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3 fs-5 fw-black" href="#">
+                🍔 逢甲美食大轉盤 <span class="badge bg-danger ms-1 fs-8">後台管理</span>
+            </a>
+            <button class="navbar-toggler position-absolute d-md-none collapsed end-0 m-2" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="d-none d-md-flex pe-3">
+                <a href="/" target="_blank" class="btn btn-outline-light btn-sm rounded-pill px-3">
+                    🌐 前台首頁
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- 側邊選單 -->
+            <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+                <div class="position-sticky pt-3">
+                    <ul class="nav flex-column gap-1">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="#">
+                                🍔 店家資料維護
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/" target="_blank">
+                                🌐 前往轉盤首頁
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- 主要內容區 -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom border-secondary border-opacity-25">
+                    <h1 class="h2 fw-bold text-white">🍔 店家資料管理 (F-04)</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <button type="button" class="btn btn-sm btn-gradient px-3 rounded-pill" onclick="resetFormForNew()">
+                            ➕ 新增店家資料
+                        </button>
+                    </div>
+                </div>
+
+                <div class="row g-4">
+                    <!-- 左側：店家列表表格 -->
+                    <div class="col-12 col-xl-7">
+                        <div class="glass-card p-4 h-100">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h3 class="fs-5 fw-bold text-white m-0">🏪 現有店家列表</h3>
+                                <div class="badge bg-secondary py-2 px-3 rounded-pill" id="storeCount">共 0 家</div>
+                            </div>
+                            <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
+                                <table class="table table-hover align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>店名</th>
+                                            <th>類型</th>
+                                            <th>預算</th>
+                                            <th>距離</th>
+                                            <th class="text-end">操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="storeTableBody">
+                                        <!-- 資料由 JS 動態載入 -->
+                                        <tr>
+                                            <td colspan="6" class="text-center text-secondary py-4">資料加載中...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 右側：編輯與新增表單 -->
+                    <div class="col-12 col-xl-5">
+                        <div class="glass-card p-4">
+                            <h3 class="fs-5 fw-bold text-white mb-4" id="formActionTitle">➕ 新增店家資料</h3>
+                            <form id="storeForm" class="needs-validation" novalidate>
+                                <input type="hidden" id="store_id">
+
+                                <!-- 1. 基本資訊區 -->
+                                <div class="mb-4">
+                                    <div class="form-section-title">
+                                        <span>📝</span> 基本資訊
+                                    </div>
+                                    <div class="row g-3">
+                                        <div class="col-12">
+                                            <label for="name" class="form-label">店家名稱 <span class="text-danger-custom">*</span></label>
+                                            <input type="text" class="form-control" id="name" placeholder="例如：極味屋日式拉麵" required>
+                                            <div class="invalid-feedback">請輸入店家名稱</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <label for="meal_type" class="form-label">餐點類型 <span class="text-danger-custom">*</span></label>
+                                            <select class="form-select" id="meal_type" required>
+                                                <option value="" disabled selected>選擇分類</option>
+                                                <option value="小吃">🍢 特色小吃</option>
+                                                <option value="主食">🍚 飽胃主食</option>
+                                                <option value="甜點">🍦 療癒甜點</option>
+                                                <option value="飲料">🥤 消暑飲料</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-6">
+                                            <label for="price_range" class="form-label">價格等級 <span class="text-danger-custom">*</span></label>
+                                            <select class="form-select" id="price_range" required>
+                                                <option value="" disabled selected>選擇等級</option>
+                                                <option value="$">$ 100元內 (平價)</option>
+                                                <option value="$$">$$ 100-200元 (中價)</option>
+                                                <option value="$$$">$$$ 200元以上 (高檔)</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-6">
+                                            <label for="avg_price" class="form-label">平均消費 (NT$)</label>
+                                            <input type="number" class="form-control" id="avg_price" placeholder="例如：150" min="0">
+                                        </div>
+                                        <div class="col-6">
+                                            <label for="sub_area" class="form-label">細分區域</label>
+                                            <input type="text" class="form-control" id="sub_area" placeholder="例如：文華路">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 2. 地理與導航區 -->
+                                <div class="mb-4">
+                                    <div class="form-section-title">
+                                        <span>📍</span> 定位與導航
+                                    </div>
+                                    <div class="row g-3">
+                                        <div class="col-6">
+                                            <label for="walking_distance" class="form-label">步行時間 (分鐘)</label>
+                                            <input type="number" class="form-control" id="walking_distance" placeholder="例如：3" min="0">
+                                        </div>
+                                        <div class="col-6">
+                                            <label for="rating" class="form-label">Google 評分</label>
+                                            <input type="number" class="form-control" id="rating" placeholder="例如：4.7" step="0.1" min="0" max="5">
+                                        </div>
+                                        <div class="col-6">
+                                            <label for="latitude" class="form-label">緯度 (Latitude)</label>
+                                            <input type="number" class="form-control" id="latitude" placeholder="24.1789" step="0.00001">
+                                        </div>
+                                        <div class="col-6">
+                                            <label for="longitude" class="form-label">經度 (Longitude)</label>
+                                            <input type="number" class="form-control" id="longitude" placeholder="120.6453" step="0.00001">
+                                        </div>
+                                        <div class="col-12">
+                                            <label for="google_maps_url" class="form-label">Google 地圖導航網址</label>
+                                            <input type="url" class="form-control" id="google_maps_url" placeholder="https://www.google.com/maps/...">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 3. 營業與特惠區 -->
+                                <div class="mb-4">
+                                    <div class="form-section-title">
+                                        <span>🎁</span> 特惠與營業時間
+                                    </div>
+                                    <div class="row g-3">
+                                        <div class="col-6">
+                                            <label for="opening_hours" class="form-label">營業時段</label>
+                                            <input type="text" class="form-control" id="opening_hours" placeholder="例如：17:00-23:30">
+                                        </div>
+                                        <div class="col-6">
+                                            <label for="off_days" class="form-label">每週公休日</label>
+                                            <input type="text" class="form-control" id="off_days" placeholder="例如：星期二 或 無">
+                                        </div>
+                                        <div class="col-12">
+                                            <label for="student_discount" class="form-label">🎓 學生證特約優惠</label>
+                                            <input type="text" class="form-control" id="student_discount" placeholder="例如：憑學生證加麵一次免費">
+                                        </div>
+                                        <div class="col-12">
+                                            <label for="special_offer" class="form-label">🎁 轉盤專屬優惠</label>
+                                            <input type="text" class="form-control" id="special_offer" placeholder="例如：憑結果畫面贈小菜一盤">
+                                        </div>
+                                        <div class="col-12">
+                                            <label for="recommended_items" class="form-label">🔥 推薦必點餐點 (以分號分開)</label>
+                                            <input type="text" class="form-control" id="recommended_items" placeholder="叉燒豚骨拉麵;黃金煎餃;冷泡茶">
+                                        </div>
+                                        <div class="col-12">
+                                            <label for="featured_image" class="form-label">精選相片 URL</label>
+                                            <input type="text" class="form-control" id="featured_image" placeholder="https://images.unsplash.com/...">
+                                        </div>
+                                        <div class="col-12">
+                                            <label for="description" class="form-label">店家特色描述</label>
+                                            <textarea class="form-control" id="description" rows="3" placeholder="請填寫店家特色描述..."></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 控制按鈕 -->
+                                <div class="d-flex gap-3 justify-content-end border-top border-secondary border-opacity-25 pt-3">
+                                    <button type="button" class="btn btn-outline-secondary px-4 rounded-pill text-white" onclick="resetFormForNew()">重設 🔄</button>
+                                    <button type="submit" class="btn btn-gradient px-4 rounded-pill">儲存店家 💾</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let allStores = [];
+
+        // 載入所有店家清單
+        async function fetchStores() {
+            try {
+                const response = await fetch('/api/stores');
+                if (response.ok) {
+                    allStores = await response.json();
+                    renderStoreTable();
+                }
+            } catch (e) {
+                console.error("載入店家失敗:", e);
+            }
+        }
+
+        // 繪製店家表格
+        function renderStoreTable() {
+            const tbody = document.getElementById("storeTableBody");
+            const countBadge = document.getElementById("storeCount");
+            
+            countBadge.textContent = `共 ${allStores.length} 家`;
+            
+            if (allStores.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center text-secondary py-4">目前無店家資料</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = allStores.map(store => `
+                <tr id="row-${store.id}">
+                    <td>${store.id}</td>
+                    <td class="fw-bold text-white">${store.name}</td>
+                    <td><span class="badge bg-secondary bg-opacity-25 text-white border border-secondary border-opacity-25">${store.meal_type || '小吃'}</span></td>
+                    <td><strong class="text-warning">${store.price_range || '$'}</strong></td>
+                    <td>${store.walking_distance ? store.walking_distance + ' 分' : ' - '}</td>
+                    <td class="text-end">
+                        <button class="btn btn-outline-info btn-sm rounded-pill me-1" onclick="editStore(${store.id})">✏️ 編輯</button>
+                        <button class="btn btn-outline-danger btn-sm rounded-pill" onclick="deleteStore(${store.id})">🗑️ 刪除</button>
+                    </td>
+                </tr>
+            `).join("");
+        }
+
+        // 重設為新增模式
+        function resetFormForNew() {
+            document.getElementById("storeForm").classList.remove('was-validated');
+            document.getElementById("storeForm").reset();
+            document.getElementById("store_id").value = "";
+            document.getElementById("formActionTitle").textContent = "➕ 新增店家資料";
+        }
+
+        // 編輯載入資料
+        async function editStore(id) {
+            try {
+                // 向單一店家詳情 API 取得完整資料
+                const response = await fetch(`/api/stores/${id}`);
+                if (!response.ok) throw new Error("載入店家詳情失敗");
+                
+                const store = await response.json();
+                
+                document.getElementById("store_id").value = store.id;
+                document.getElementById("name").value = store.name || "";
+                document.getElementById("meal_type").value = store.meal_type || "";
+                document.getElementById("price_range").value = store.price_range || "";
+                document.getElementById("avg_price").value = store.avg_price || "";
+                document.getElementById("sub_area").value = store.sub_area || "";
+                document.getElementById("walking_distance").value = store.walking_distance || "";
+                document.getElementById("rating").value = store.rating || "";
+                document.getElementById("latitude").value = store.latitude || "";
+                document.getElementById("longitude").value = store.longitude || "";
+                document.getElementById("google_maps_url").value = store.google_maps_url || "";
+                document.getElementById("opening_hours").value = store.opening_hours || "";
+                document.getElementById("off_days").value = store.off_days || "";
+                document.getElementById("student_discount").value = store.student_discount || "";
+                document.getElementById("special_offer").value = store.special_offer || "";
+                
+                // 處理推薦必點 (若為陣列則組裝回分號格式)
+                if (Array.isArray(store.recommended_items)) {
+                    document.getElementById("recommended_items").value = store.recommended_items.join(";");
+                } else {
+                    document.getElementById("recommended_items").value = store.recommended_items || "";
+                }
+                
+                document.getElementById("featured_image").value = store.featured_image || "";
+                document.getElementById("description").value = store.description || "";
+                
+                document.getElementById("formActionTitle").textContent = `✏️ 編輯店家資料 (ID: ${store.id})`;
+                
+                // 滾動到表單位置
+                document.getElementById("storeForm").scrollIntoView({ behavior: 'smooth' });
+            } catch (e) {
+                alert("載入店家詳情失敗，請稍後再試！");
+            }
+        }
+
+        // 刪除店家
+        async function deleteStore(id) {
+            if (!confirm("確定要永久刪除此店家資料嗎？此操作無法還原！")) return;
+            
+            try {
+                const response = await fetch(`/api/stores/${id}`, { method: 'DELETE' });
+                // 由於目前後端 store_bp 可能只實作了 GET，若 DELETE 回傳 405，我們進行友好提示
+                if (response.ok) {
+                    alert("店家刪除成功！");
+                    fetchStores();
+                    resetFormForNew();
+                } else if (response.status === 405) {
+                    // 若後端 API 尚未實作 DELETE 的降級示範
+                    alert("後端刪除 API 尚未對接，正在本地模擬刪除...");
+                    allStores = allStores.filter(s => s.id !== id);
+                    renderStoreTable();
+                } else {
+                    alert("刪除失敗");
+                }
+            } catch (e) {
+                console.error("刪除請求出錯:", e);
+            }
+        }
+
+        // 表單送出處置 (新增與修改)
+        document.getElementById("storeForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const form = e.target;
+            
+            // 進行客製化友善的必填欄位驗證
+            const name = document.getElementById("name").value.trim();
+            const mealType = document.getElementById("meal_type").value;
+            const priceRange = document.getElementById("price_range").value;
+            
+            let missingFields = [];
+            if (!name) missingFields.push("店家名稱");
+            if (!mealType) missingFields.push("餐點類型");
+            if (!priceRange) missingFields.push("價格區間");
+            
+            if (missingFields.length > 0) {
+                alert(`⚠️ 儲存失敗！有必要欄位未填寫：\n\n請填寫完整以下必填欄位：\n- ${missingFields.join("\n- ")}`);
+                
+                // 自動將輸入焦點聚焦在第一個漏填的欄位，提升易用性
+                if (!name) document.getElementById("name").focus();
+                else if (!mealType) document.getElementById("meal_type").focus();
+                else if (!priceRange) document.getElementById("price_range").focus();
+                
+                form.classList.add('was-validated');
+                return;
+            }
+
+            const storeId = document.getElementById("store_id").value;
+            const isEdit = storeId !== "";
+            
+            // 組裝表單資料
+            const payload = {
+                name: document.getElementById("name").value,
+                meal_type: document.getElementById("meal_type").value,
+                price_range: document.getElementById("price_range").value,
+                avg_price: document.getElementById("avg_price").value ? parseInt(document.getElementById("avg_price").value) : null,
+                sub_area: document.getElementById("sub_area").value || null,
+                walking_distance: document.getElementById("walking_distance").value ? parseInt(document.getElementById("walking_distance").value) : null,
+                rating: document.getElementById("rating").value ? parseFloat(document.getElementById("rating").value) : null,
+                latitude: document.getElementById("latitude").value ? parseFloat(document.getElementById("latitude").value) : null,
+                longitude: document.getElementById("longitude").value ? parseFloat(document.getElementById("longitude").value) : null,
+                google_maps_url: document.getElementById("google_maps_url").value || null,
+                opening_hours: document.getElementById("opening_hours").value || null,
+                off_days: document.getElementById("off_days").value || null,
+                student_discount: document.getElementById("student_discount").value || null,
+                special_offer: document.getElementById("special_offer").value || null,
+                recommended_items: document.getElementById("recommended_items").value || null,
+                featured_image: document.getElementById("featured_image").value || null,
+                description: document.getElementById("description").value || null
+            };
+
+            const url = isEdit ? `/api/stores/${storeId}` : '/api/stores';
+            const method = isEdit ? 'PUT' : 'POST';
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (response.ok) {
+                    alert(isEdit ? "店家資料更新成功！" : "店家新增成功！");
+                    fetchStores();
+                    resetFormForNew();
+                } else if (response.status === 405) {
+                    // 降級友好提示
+                    alert(`後端 ${method} API 尚未對接，正在本地模擬儲存...`);
+                    if (isEdit) {
+                        const idx = allStores.findIndex(s => s.id == storeId);
+                        if (idx !== -1) {
+                            allStores[idx] = { ...allStores[idx], ...payload };
+                        }
+                    } else {
+                        const newFakeId = Math.max(...allStores.map(s => s.id), 0) + 1;
+                        allStores.unshift({ id: newFakeId, ...payload });
+                    }
+                    renderStoreTable();
+                    resetFormForNew();
+                } else {
+                    const err = await response.json();
+                    alert("儲存失敗: " + (err.message || response.statusText));
+                }
+            } catch (err) {
+                console.error("儲存請求失敗:", err);
+            }
+        });
+
+        // 頁面加載完成後初始化
+        window.addEventListener('load', () => {
+            fetchStores();
+        });
+    </script>
+</body>
+</html>
