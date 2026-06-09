@@ -60,10 +60,6 @@
               <span id="modalWalkingDistance" class="badge bg-dark bg-opacity-75 text-white py-2 px-3 rounded-pill">🚶 步行 3 分鐘</span>
               <span id="modalRating" class="badge bg-warning text-dark py-2 px-3 fw-bold rounded-pill">⭐ 4.8 (500+評價)</span>
             </div>
-            <!-- 警語提示 (圖片僅供參考) -->
-            <div class="position-absolute bottom-0 end-0 m-3">
-              <span class="text-white-50" style="font-size: 0.72rem; text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.9); font-weight: 500; pointer-events: none;">*上方圖片僅供參考</span>
-            </div>
           </div>
 
           <!-- Modal 主要內容區 -->
@@ -145,7 +141,10 @@
 
                 <!-- 推薦必點 -->
                 <div class="mb-2">
-                  <h6 class="fw-bold text-dark mb-2">🔥 推薦必點</h6>
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="fw-bold text-dark mb-0">🔥 推薦必點</h6>
+                    <span class="text-secondary small fw-normal">*上方圖片僅供參考</span>
+                  </div>
                   <div id="modalRecommendedItems" class="d-flex gap-2 overflow-x-auto pb-2" style="scrollbar-width: none; -ms-overflow-style: none;">
                     <!-- 由 JS 動態繪製 -->
                   </div>
