@@ -117,6 +117,14 @@ function spin() {
     spinBtn.disabled = true;
     spinBtn.textContent = "轉動中...";
 
+    // 禁用篩選按鈕，防止旋轉期間變更篩選條件造成資料不同步
+    const filterTriggerBtn = document.getElementById("filterTriggerBtn");
+    if (filterTriggerBtn) {
+        filterTriggerBtn.disabled = true;
+        filterTriggerBtn.style.opacity = '0.5';
+        filterTriggerBtn.style.pointerEvents = 'none';
+    }
+
     // 輕微震動回饋
     triggerVibration(50);
 
@@ -162,6 +170,14 @@ canvasContainer.addEventListener('transitionend', () => {
     isSpinning = false;
     spinBtn.disabled = false;
     spinBtn.textContent = "再來一次！";
+
+    // 啟用篩選按鈕
+    const filterTriggerBtn = document.getElementById("filterTriggerBtn");
+    if (filterTriggerBtn) {
+        filterTriggerBtn.disabled = false;
+        filterTriggerBtn.style.opacity = '';
+        filterTriggerBtn.style.pointerEvents = '';
+    }
 
     // 直接採用預先選定的索引，100% 避免因旋轉角度反推的浮點數誤差所造成的圖文不符問題！
     let index = targetSelectedIndex;
@@ -392,7 +408,13 @@ async function loadStores(priceRange = '', mealType = '') {
         
         // 每次重新套用篩選後，重置轉盤旋轉角度，確保位置重設
         currentRotation = 0;
+        // 暫時停用 transition，避免重設角度時產生緩慢回轉動畫與事件干擾
+        canvasContainer.style.transition = 'none';
         canvasContainer.style.transform = 'rotate(0deg)';
+        // 強制瀏覽器重繪 (Force Reflow) 確保設定立即生效
+        canvasContainer.offsetHeight; 
+        // 恢復原有的 transition 設定
+        canvasContainer.style.transition = 'transform 5s cubic-bezier(0.2, 0.8, 0.2, 1)';
         
         setupCanvas();
     } catch (error) {
